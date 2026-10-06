@@ -1,26 +1,24 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { router, useScrollToTop } from 'expo-router';
+import { useMemo, useRef, useState } from 'react';
+import { FlatList, Platform, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Baseplate } from '../../../components/Baseplate';
 import { FigureCard } from '../../../components/FigureCard';
 import { Logo } from '../../../components/Logo';
 import { SortMenu, type SortKey } from '../../../components/SortMenu';
+import { TextLink } from '../../../components/TextLink';
 import { ALL_THEMES, ThemeChips } from '../../../components/ThemeChips';
 import { Tile } from '../../../components/Tile';
-import { FIGURES, fold, type Figure } from '../../../data/figures';
+import { FIGURES, matchesSearch, type Figure } from '../../../data/figures';
 import { fonts, useTheme } from '../../../theme';
 
 const PADDING = 16;
 const GAP = 12;
 
 function filterAndSort(figures: Figure[], query: string, theme: string, sort: SortKey): Figure[] {
-  const q = fold(query.trim());
-  const matches = figures.filter(
-    (f) => (theme === ALL_THEMES || f.theme === theme) && (!q || fold(f.name).includes(q) || fold(f.theme).includes(q)),
-  );
+  const matches = figures.filter((f) => (theme === ALL_THEMES || f.theme === theme) && matchesSearch(f, query));
   return matches.sort((a, b) => {
     if (sort === 'az') return a.name.localeCompare(b.name);
     if (sort === 'least') return a.priceUsed - b.priceUsed || a.name.localeCompare(b.name);
@@ -31,9 +29,13 @@ function filterAndSort(figures: Figure[], query: string, theme: string, sort: So
 export default function MarketplaceScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const listRef = useRef<FlatList<Figure>>(null);
   const [query, setQuery] = useState('');
   const [theme, setTheme] = useState(ALL_THEMES);
   const [sort, setSort] = useState<SortKey>('most');
+
+  // Tapping the Marketplace tab again scrolls back to the top.
+  useScrollToTop(listRef);
 
   const figures = useMemo(() => filterAndSort(FIGURES, query, theme, sort), [query, theme, sort]);
   const cardWidth = Math.floor((width - PADDING * 2 - GAP) / 2);
@@ -41,6 +43,7 @@ export default function MarketplaceScreen() {
   return (
     <Baseplate>
       <FlatList
+        ref={listRef}
         data={figures}
         keyExtractor={(f) => f.id}
         numColumns={2}
@@ -61,7 +64,9 @@ export default function MarketplaceScreen() {
             count={figures.length}
           />
         }
-        ListEmptyComponent={<EmptyState onReset={() => { setQuery(''); setTheme(ALL_THEMES); }} />}
+        ListEmptyComponent={
+          <EmptyState query={query} theme={theme} onClearSearch={() => setQuery('')} onAllThemes={() => setTheme(ALL_THEMES)} />
+        }
         renderItem={({ item }) => (
           <FigureCard figure={item} width={cardWidth} onPress={() => router.push(`/marketplace/${item.id}`)} />
         )}
@@ -82,6 +87,7 @@ type HeaderProps = {
 
 function MarketplaceHeader({ query, onQuery, theme, onTheme, sort, onSort, count }: HeaderProps) {
   const t = useTheme();
+  const [focused, setFocused] = useState(false);
   return (
     <View style={styles.header}>
       <View style={styles.padded}>
@@ -90,21 +96,30 @@ function MarketplaceHeader({ query, onQuery, theme, onTheme, sort, onSort, count
         </View>
         <Tile style={styles.hero}>
           <Text style={[styles.title, { color: t.text }]}>Marketplace</Text>
-          <Text style={[styles.subtitle, { color: t.textMuted }]}>Browse typical prices, then buy from trusted sellers.</Text>
+          <Text style={[styles.subtitle, { color: t.textMuted }]}>
+            Browse typical prices, then buy on BrickLink or eBay.
+          </Text>
 
-          <View style={[styles.search, { backgroundColor: t.photoBackground, borderColor: t.border }]}>
+          {/* The whole box highlights while typing (instead of the browser's square outline). */}
+          <View style={[styles.search, { backgroundColor: t.photoBackground, borderColor: focused ? t.link : t.border }]}>
             <Ionicons name="search" size={18} color={t.placeholder} />
             <TextInput
               value={query}
               onChangeText={onQuery}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
               placeholder="Search minifigures"
               placeholderTextColor={t.placeholder}
-              style={[styles.searchInput, { color: t.text }]}
+              style={[styles.searchInput, { color: t.text }, Platform.OS === 'web' && styles.noOutline]}
               returnKeyType="search"
               autoCorrect={false}
-              clearButtonMode="while-editing"
               accessibilityLabel="Search minifigures"
             />
+            {query ? (
+              <Pressable onPress={() => onQuery('')} accessibilityRole="button" accessibilityLabel="Clear search" hitSlop={10}>
+                <Ionicons name="close-circle" size={20} color={t.placeholder} />
+              </Pressable>
+            ) : null}
           </View>
         </Tile>
       </View>
@@ -121,14 +136,22 @@ function MarketplaceHeader({ query, onQuery, theme, onTheme, sort, onSort, count
   );
 }
 
-function EmptyState({ onReset }: { onReset: () => void }) {
+type EmptyProps = { query: string; theme: string; onClearSearch: () => void; onAllThemes: () => void };
+
+/** Says exactly which filters hide everything, with a way to undo each one. */
+function EmptyState({ query, theme, onClearSearch, onAllThemes }: EmptyProps) {
   const t = useTheme();
+  const themed = theme !== ALL_THEMES;
+  const message = query.trim()
+    ? `No ${themed ? `${theme} ` : ''}figures match “${query.trim()}”.`
+    : `No ${themed ? `${theme} ` : ''}figures yet.`;
   return (
-    <View style={styles.empty}>
-      <Text style={[styles.emptyText, { color: t.textMuted }]}>No figures match your search.</Text>
-      <Pressable onPress={onReset} accessibilityRole="button">
-        <Text style={[styles.emptyLink, { color: t.text }]}>Clear filters</Text>
-      </Pressable>
+    <View style={styles.padded}>
+      <Tile style={styles.empty}>
+        <Text style={[styles.emptyText, { color: t.text }]}>{message}</Text>
+        {query.trim() ? <TextLink icon="close-circle" label="Clear search" onPress={onClearSearch} /> : null}
+        {themed ? <TextLink icon="apps" label="Show all themes" onPress={onAllThemes} /> : null}
+      </Tile>
     </View>
   );
 }
@@ -147,13 +170,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 1.5,
     paddingHorizontal: 12,
   },
   searchInput: { flex: 1, fontFamily: fonts.bodySemiBold, fontSize: 16, paddingVertical: 12 },
+  noOutline: { outlineWidth: 0 },
   sortRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   count: { fontFamily: fonts.bodyHeavy, fontSize: 15 },
-  empty: { alignItems: 'center', gap: 8, paddingVertical: 40 },
-  emptyText: { fontFamily: fonts.bodySemiBold, fontSize: 16 },
-  emptyLink: { fontFamily: fonts.bodyHeavy, fontSize: 16, textDecorationLine: 'underline' },
+  empty: { alignItems: 'center', gap: 4, paddingVertical: 24 },
+  emptyText: { fontFamily: fonts.bodyBold, fontSize: 16, textAlign: 'center', marginBottom: 4 },
 });

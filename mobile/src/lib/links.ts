@@ -7,6 +7,11 @@ export function ebaySearchUrl(figureName: string): string {
   return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(`LEGO ${figureName} minifigure`)}`;
 }
 
+/** eBay search filtered to finished sales, so you see what it really sold for. */
+export function ebaySoldUrl(figureName: string): string {
+  return `${ebaySearchUrl(figureName)}&LH_Sold=1&LH_Complete=1`;
+}
+
 export function brickLinkSearchUrl(figureName: string): string {
   return `https://www.bricklink.com/v2/search.page?q=${encodeURIComponent(figureName)}#T=M`;
 }

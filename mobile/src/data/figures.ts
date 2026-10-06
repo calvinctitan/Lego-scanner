@@ -95,3 +95,61 @@ export const FIGURES: Figure[] = rawFigures.map((f) => {
 export function getFigure(id: string | undefined): Figure | undefined {
   return FIGURES.find((f) => f.id === id);
 }
+
+// Words people use for the same thing, so searching "astronaut" finds "Spaceman".
+const SYNONYMS: Record<string, string[]> = {
+  astronaut: ['spaceman'],
+  spaceman: ['astronaut'],
+  trooper: ['stormtrooper'],
+  stormtrooper: ['trooper'],
+  cop: ['police'],
+  policeman: ['police'],
+  fireman: ['firefighter'],
+  firefighter: ['fireman'],
+  gold: ['golden'],
+  golden: ['gold'],
+  ninja: ['ninjago'],
+};
+
+function words(text: string): string[] {
+  return fold(text).split(/[^a-z0-9]+/).filter(Boolean);
+}
+
+function withSynonyms(list: string[]): string[] {
+  return list.flatMap((w) => [w, ...(SYNONYMS[w] ?? [])]);
+}
+
+/** True if every word typed matches the start of a word in the figure's name, theme or year. */
+export function matchesSearch(figure: Figure, query: string): boolean {
+  const typed = words(query);
+  if (typed.length === 0) return true;
+  const own = withSynonyms(words(`${figure.name} ${figure.theme} ${figure.year}`));
+  const squashed = fold(figure.name).replace(/[^a-z0-9]/g, '');
+  return typed.every((w) => own.some((o) => o.startsWith(w)) || squashed.includes(w));
+}
+
+/**
+ * The Marketplace figure a scan most likely refers to, or undefined.
+ * Every word of the Marketplace name must appear in the scanned name (allowing synonyms),
+ * and the themes must agree, so "Classic Space Astronaut (Red)" finds "Red Classic Spaceman".
+ */
+export function findFigureForScan(scanName: string, scanTheme: string): Figure | undefined {
+  const scanned = new Set(withSynonyms(words(scanName)));
+  const themeWordsOf = (theme: string) => words(theme).filter((w) => !['the', 'of', 'and', 'lego'].includes(w));
+  const scanThemeWords = themeWordsOf(scanTheme);
+  let best: Figure | undefined;
+  let bestCount = 0;
+  for (const figure of FIGURES) {
+    const nameWords = words(figure.name);
+    if (!nameWords.every((w) => scanned.has(w))) continue;
+    const themeWords = themeWordsOf(figure.theme);
+    const themesAgree =
+      scanThemeWords.length === 0 ||
+      themeWords.some((t) => scanThemeWords.some((s) => s.startsWith(t.slice(0, 6)) || t.startsWith(s.slice(0, 6))));
+    if (themesAgree && nameWords.length > bestCount) {
+      best = figure;
+      bestCount = nameWords.length;
+    }
+  }
+  return best;
+}

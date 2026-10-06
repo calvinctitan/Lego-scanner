@@ -140,7 +140,7 @@ While `npx expo start` is running, any change you save to the code shows up on y
 
 ## Using the app
 
-- **Scan tab:** tap **Scan a minifigure** to take a photo (stand the figure on a plain background and fill most of the frame), or **Choose from photos**. After a few seconds you'll see the figure's name, theme, year, rarity, used and new price ranges, and a tip about what affects its value. **Find it for sale** opens an eBay search. Your past scans are saved under **My scans**; tap one to see it again.
+- **Scan tab:** tap **Scan a minifigure** to take a photo (stand the figure on a plain background and fill most of the frame), or **Choose from photos**. After a few seconds you'll see the figure's name, theme, year, rarity, used and new price ranges, and a tip about what affects its value. **Recent sold prices on eBay** shows what that figure actually sold for, and **Find it for sale** opens an eBay search. Your past scans are saved under **My scans**; tap one to see it again, or swipe it to the left to delete it.
 - **Marketplace tab:** search, filter by theme, sort, and tap a figure for details. **Buy on BrickLink** and **Buy on eBay** open those sites inside the app. Buying happens on their websites; Legará never handles payments.
 - **Dark mode:** follows your iPhone's setting automatically.
 

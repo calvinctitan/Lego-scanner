@@ -30,6 +30,23 @@ export async function loadScans(): Promise<SavedScan[]> {
   }
 }
 
+/** Removes one scan from "My scans" and deletes its photo. Returns the updated list. */
+export async function deleteScan(id: string): Promise<SavedScan[]> {
+  const all = await loadScans();
+  const removed = all.find((s) => s.id === id);
+  const kept = all.filter((s) => s.id !== id);
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(kept));
+  if (removed && Platform.OS !== 'web') {
+    try {
+      const file = new File(scansFolder(), removed.photoFile);
+      if (file.exists) file.delete();
+    } catch {
+      // A missing file is fine.
+    }
+  }
+  return kept;
+}
+
 /** Web only: a small JPEG thumbnail as text, because a browser's temporary photo link stops working on reload. */
 async function webThumbnail(photoUri: string): Promise<string> {
   try {

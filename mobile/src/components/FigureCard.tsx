@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Figure } from '../data/figures';
 import { formatPrice } from '../lib/format';
-import { brand, fonts, useTheme } from '../theme';
+import { fonts, useTheme } from '../theme';
 import { FigureArt } from './FigureArt';
 import { RarityBadge } from './RarityBadge';
 import { Tile } from './Tile';
@@ -34,8 +34,9 @@ export function FigureCard({ figure, width, onPress }: Props) {
           {/* Pushes the badge and price to the bottom so cards in a row line up. */}
           <View style={styles.spacer} />
           {figure.rarity !== 'Common' ? <RarityBadge rarity={figure.rarity} /> : null}
-          <Text style={[styles.price, { color: t.scheme === 'dark' ? '#4FBF77' : brand.green }]}>
+          <Text style={[styles.price, { color: t.priceText }]}>
             {formatPrice(figure.priceUsed)}
+            <Text style={[styles.used, { color: t.textMuted }]}> used</Text>
           </Text>
         </Tile>
       )}
@@ -49,4 +50,5 @@ const styles = StyleSheet.create({
   theme: { fontFamily: fonts.bodySemiBold, fontSize: 13 },
   spacer: { flex: 1, minHeight: 6 },
   price: { fontFamily: fonts.title, fontSize: 22, marginTop: 2 },
+  used: { fontFamily: fonts.bodyBold, fontSize: 14 },
 });

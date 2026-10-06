@@ -8,10 +8,11 @@ import { BrickButton } from '../../../components/BrickButton';
 import { FigureArt } from '../../../components/FigureArt';
 import { PriceBrick } from '../../../components/PriceBrick';
 import { RarityBadge } from '../../../components/RarityBadge';
+import { TextLink } from '../../../components/TextLink';
 import { Tile } from '../../../components/Tile';
 import { getFigure } from '../../../data/figures';
 import { formatPrice, themeAndYear } from '../../../lib/format';
-import { brickLinkSearchUrl, ebaySearchUrl, openInAppBrowser } from '../../../lib/links';
+import { brickLinkSearchUrl, ebaySearchUrl, ebaySoldUrl, openInAppBrowser } from '../../../lib/links';
 import { brand, fonts, useTheme } from '../../../theme';
 
 export default function FigureDetailScreen() {
@@ -24,7 +25,8 @@ export default function FigureDetailScreen() {
 
   return (
     <Baseplate>
-      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 10 }]} showsVerticalScrollIndicator={false}>
+      {/* The Back button stays at the top while the page scrolls. */}
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <Pressable
           onPress={goBack}
           accessibilityRole="button"
@@ -38,7 +40,8 @@ export default function FigureDetailScreen() {
           <Ionicons name="chevron-back" size={20} color={t.text} />
           <Text style={[styles.backText, { color: t.text }]}>Back</Text>
         </Pressable>
-
+      </View>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {!figure ? (
           <Tile>
             <Text style={[styles.name, { color: t.text }]}>Figure not found</Text>
@@ -55,7 +58,13 @@ export default function FigureDetailScreen() {
                 <RarityBadge rarity={figure.rarity} />
               </View>
 
-              <PriceBrick label="Typical price, used" value={formatPrice(figure.priceUsed)} color={brand.green} big />
+              <View style={styles.priceBlock}>
+                <PriceBrick label="Typical price, used" value={formatPrice(figure.priceUsed)} color={brand.green} big />
+                <Text style={[styles.caption, { color: t.textMuted }]}>
+                  A rough guide to what a complete, used one sells for. Prices change, so check recent sales.
+                </Text>
+                <TextLink icon="trending-up" label="Recent sold prices on eBay" onPress={() => openInAppBrowser(ebaySoldUrl(figure.name))} />
+              </View>
 
               <Text style={[styles.note, { color: t.text }]}>{figure.note}</Text>
 
@@ -73,7 +82,9 @@ export default function FigureDetailScreen() {
                   onPress={() => openInAppBrowser(ebaySearchUrl(figure.name))}
                 />
               </View>
-              <Text style={[styles.fine, { color: t.textMuted }]}>You’ll finish buying on the seller’s website.</Text>
+              <Text style={[styles.fine, { color: t.textMuted }]}>
+                BrickLink is a large online marketplace just for LEGO. You’ll finish buying on the seller’s website.
+              </Text>
             </Tile>
           </>
         )}
@@ -83,6 +94,7 @@ export default function FigureDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  header: { paddingHorizontal: 16, paddingBottom: 10 },
   content: { paddingHorizontal: 16, paddingBottom: 32, gap: 18 },
   back: {
     alignSelf: 'flex-start',
@@ -103,5 +115,7 @@ const styles = StyleSheet.create({
   subtitle: { fontFamily: fonts.bodyBold, fontSize: 16 },
   note: { fontFamily: fonts.body, fontSize: 16, lineHeight: 23 },
   actions: { gap: 12 },
-  fine: { fontFamily: fonts.bodySemiBold, fontSize: 13, textAlign: 'center' },
+  priceBlock: { gap: 6 },
+  caption: { fontFamily: fonts.bodySemiBold, fontSize: 14, lineHeight: 19 },
+  fine: { fontFamily: fonts.bodySemiBold, fontSize: 14, lineHeight: 19, textAlign: 'center' },
 });

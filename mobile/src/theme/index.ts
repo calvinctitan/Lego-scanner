@@ -30,6 +30,12 @@ export type Palette = {
   warningBackground: string;
   warningText: string;
   backdrop: string;
+  /** Tappable text such as "Recent sold prices on eBay". */
+  link: string;
+  /** Text for destructive actions such as "Remove from My scans". */
+  danger: string;
+  /** Prices shown as plain text (green that stays readable on the card). */
+  priceText: string;
 };
 
 const light: Palette = {
@@ -51,6 +57,9 @@ const light: Palette = {
   warningBackground: '#FFF4CC',
   warningText: '#5C4700',
   backdrop: 'rgba(0,0,0,0.35)',
+  link: '#0055BF',
+  danger: '#B30E10',
+  priceText: '#237841',
 };
 
 const dark: Palette = {
@@ -72,6 +81,9 @@ const dark: Palette = {
   warningBackground: '#3D3510',
   warningText: '#F5DE8A',
   backdrop: 'rgba(0,0,0,0.6)',
+  link: '#7FB2FF',
+  danger: '#FF8A8A',
+  priceText: '#4FBF77',
 };
 
 /** Returns the light or dark palette, following the phone's appearance setting. */

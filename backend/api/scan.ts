@@ -24,11 +24,11 @@ Look at the photo and fill in every field:
 - name: the name collectors use for this exact version, specific enough to search on BrickLink or eBay (for example "Boba Fett (Cloud City)" rather than "Boba Fett"). If it isn't a minifigure, describe what you see in a few words.
 - theme: the LEGO theme. When it fits, use one of: Star Wars, Harry Potter, Marvel, DC, Ninjago, City, Collectibles, Lord of the Rings, Classic Space. Otherwise use the official LEGO theme name. Empty if it isn't a minifigure.
 - year: the year this version was first released, or null if you can't tell.
-- valueUsedLow / valueUsedHigh: the typical range of recent secondary-market sale prices (BrickLink, eBay sold listings) in whole US dollars for this figure complete and in good used condition.
+- valueUsedLow / valueUsedHigh: the typical range of recent secondary-market sale prices (BrickLink, eBay sold listings) in whole US dollars for this figure complete with its usual accessories (and its certificate, for figures that came with one) and in good used condition.
 - valueNewLow / valueNewHigh: the same for new, unused condition (sealed, where that applies, like Collectible Minifigures bags).
 - rarity: Common (in many sets, a few dollars), Uncommon, Rare, or Very rare (limited promotions, exclusives, or figures worth hundreds of dollars or more).
 - confidence: high when you're sure of the exact version, medium when you know the character but not the exact version, low when the photo is unclear or you're guessing.
-- note: one short sentence for a casual collector about what most affects this figure's value (exact version, printing, missing accessories, condition, or how many were made).
+- note: one short sentence for a casual collector about what most affects this figure's value (exact version, printing, missing accessories, condition, how many were made, or, for figures that are often faked, what to check).
 
 Give honest ranges rather than false precision; when you aren't sure of the exact version, widen the range. If it isn't a minifigure, set all four values to 0.`;
 

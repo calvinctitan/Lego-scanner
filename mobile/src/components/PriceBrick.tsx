@@ -8,14 +8,20 @@ type Props = {
   value: string;
   color: string;
   big?: boolean;
+  /** Use the same size for bricks shown side by side. */
+  fontSize?: number;
   style?: StyleProp<ViewStyle>;
 };
 
 /** A colored brick showing a price, e.g. green "Used  $40–$60". */
-export function PriceBrick({ label, value, color, big, style }: Props) {
+/** Long ranges like "$1,500–$2,500" need a smaller font to fit in a half-width brick. */
+export function priceFontSize(value: string): number {
+  return value.length > 11 ? 17 : value.length > 8 ? 20 : 24;
+}
+
+export function PriceBrick({ label, value, color, big, fontSize: requestedSize, style }: Props) {
   const fg = textOn(color);
-  // Long ranges like "$1,500–$2,500" get a smaller font so they fit in a half-width brick.
-  const fontSize = big ? 34 : value.length > 11 ? 17 : value.length > 8 ? 20 : 24;
+  const fontSize = big ? 34 : (requestedSize ?? priceFontSize(value));
   return (
     <Brick color={color} size={big ? 'md' : 'sm'} style={style} contentStyle={[styles.face, big && styles.faceBig]}>
       <Text style={[styles.label, { color: fg }]} maxFontSizeMultiplier={1.3}>

@@ -10,6 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { brand, useTheme } from '../theme';
 
@@ -43,9 +44,12 @@ export default function RootLayout() {
   };
 
   return (
-    <ThemeProvider value={navTheme}>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.baseplate } }} />
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    // GestureHandlerRootView lets rows in "My scans" be swiped to delete.
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider value={navTheme}>
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.baseplate } }} />
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }
