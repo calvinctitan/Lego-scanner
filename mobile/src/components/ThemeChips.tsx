@@ -20,6 +20,11 @@ let peekShown = false;
 export function ThemeChips({ value, onChange }: Props) {
   const t = useTheme();
   const scrollRef = useRef<ScrollView>(null);
+  // Where each chip sits in the row, how far the row is scrolled, and how wide it is on screen.
+  const chips = useRef<Record<string, { x: number; width: number }>>({});
+  const scrollX = useRef(0);
+  const rowWidth = useRef(0);
+  const firstValue = useRef(true);
 
   useEffect(() => {
     if (peekShown) return;
@@ -35,6 +40,18 @@ export function ThemeChips({ value, onChange }: Props) {
     return () => timers.forEach(clearTimeout);
   }, []);
 
+  // When the picked chip changes while it's off to the side (say, after "Show all themes"), slide it into view.
+  useEffect(() => {
+    if (firstValue.current) {
+      firstValue.current = false;
+      return;
+    }
+    const chip = chips.current[value];
+    if (!chip || !rowWidth.current) return;
+    const visible = chip.x >= scrollX.current && chip.x + chip.width <= scrollX.current + rowWidth.current;
+    if (!visible) scrollRef.current?.scrollTo({ x: Math.max(0, chip.x - 16), animated: true });
+  }, [value]);
+
   return (
     <ScrollView
       ref={scrollRef}
@@ -42,6 +59,9 @@ export function ThemeChips({ value, onChange }: Props) {
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.row}
       keyboardShouldPersistTaps="handled"
+      onLayout={(e) => (rowWidth.current = e.nativeEvent.layout.width)}
+      onScroll={(e) => (scrollX.current = e.nativeEvent.contentOffset.x)}
+      scrollEventThrottle={32}
     >
       {OPTIONS.map((theme) => {
         const selected = theme === value;
@@ -50,6 +70,7 @@ export function ThemeChips({ value, onChange }: Props) {
           <Pressable
             key={theme}
             onPress={() => onChange(theme)}
+            onLayout={(e) => (chips.current[theme] = { x: e.nativeEvent.layout.x, width: e.nativeEvent.layout.width })}
             accessibilityRole="button"
             accessibilityState={{ selected }}
             style={[

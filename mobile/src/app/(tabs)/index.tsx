@@ -2,7 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useNavigation } from 'expo-router';
 import type { BottomTabNavigationProp } from 'expo-router/tabs';
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Image, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Baseplate } from '../../components/Baseplate';
@@ -13,6 +13,7 @@ import { ScanHistory } from '../../components/ScanHistory';
 import { StackingBricks } from '../../components/StackingBricks';
 import { TextLink } from '../../components/TextLink';
 import { Tile } from '../../components/Tile';
+import { UndoBar } from '../../components/UndoBar';
 import { findFigureForScan } from '../../data/figures';
 import { analyzePhoto, ScanCancelledError } from '../../lib/api';
 import { formatPrice } from '../../lib/format';
@@ -20,7 +21,7 @@ import { usePhotoHeight } from '../../lib/layout';
 import { ebaySearchUrl, ebaySoldUrl, openInAppBrowser } from '../../lib/links';
 import { pickPhoto, type PreparedPhoto } from '../../lib/photo';
 import { recordScan } from '../../lib/scanCounter';
-import { deleteScan, loadScans, saveScan, scanPhotoUri } from '../../lib/scanHistory';
+import { cleanUpPhotos, deletePhotos, loadScans, removeScans, restoreScans, saveScan, scanPhotoUri } from '../../lib/scanHistory';
 import type { SavedScan, ScanResult } from '../../lib/types';
 import { brand, fonts, useTheme } from '../../theme';
 
@@ -43,6 +44,17 @@ function announce(message: string) {
   AccessibilityInfo.announceForAccessibility(message);
 }
 
+/** True when two scans have the same figure name, ignoring capital letters and spaces. */
+function sameFigure(a: string, b: string): boolean {
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
+// Long enough to notice a mistake; VoiceOver users get longer to reach the Undo button.
+const UNDO_MS = 6000;
+const UNDO_MS_SCREEN_READER = 15000;
+// A failed retry still shows the "Looking closely" screen this long, so it's clear it tried again.
+const MIN_ATTEMPT_MS = 900;
+
 export default function ScanScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
@@ -64,11 +76,23 @@ export default function ScanScreen() {
   const [busy, setBusy] = useState(false);
   // "Scan another" and "Try again" reopen whichever the person used last: the camera or their photos.
   const lastSource = useRef<PhotoSource>('camera');
+  // Scans just removed from "My scans". Their photos are kept until the chance to undo has passed.
+  const pendingRemoval = useRef<SavedScan[]>([]);
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const [undoMessage, setUndoMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    loadScans().then(setScans);
+    loadScans().then((saved) => {
+      setScans(saved);
+      cleanUpPhotos(saved);
+    });
     const scansInFlight = running.current;
-    return () => scansInFlight.forEach((controller) => controller.abort());
+    const removal = pendingRemoval;
+    return () => {
+      scansInFlight.forEach((controller) => controller.abort());
+      clearTimeout(undoTimer.current);
+      deletePhotos(removal.current);
+    };
   }, []);
 
   // Tapping the Scan tab while already on it goes back to the start.
@@ -115,6 +139,7 @@ export default function ScanScreen() {
   }
 
   async function analyze(photo: PreparedPhoto) {
+    const startedAt = Date.now();
     const scanId = ++nextScanId.current;
     const controller = new AbortController();
     running.current.set(scanId, controller);
@@ -155,6 +180,10 @@ export default function ScanScreen() {
       }
     } catch (e) {
       if (e instanceof ScanCancelledError || controller.signal.aborted || !stillWatching()) return;
+      // With no signal a retry fails instantly; pause so the person can see it really tried again.
+      const wait = MIN_ATTEMPT_MS - (Date.now() - startedAt);
+      if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+      if (controller.signal.aborted || !stillWatching()) return;
       const message = e instanceof Error ? e.message : 'Something went wrong. Please try again.';
       // Keep the photo so "Try again" can send it again once the connection is back.
       show({ kind: 'error', message, photo });
@@ -182,24 +211,60 @@ export default function ScanScreen() {
     scrollToTop();
   }
 
-  async function removeScan(id: string) {
+  /** Takes scans out of "My scans", with a few seconds to undo it. */
+  async function removeFromHistory(ids: string[], message: string) {
+    // (Browsers always answer yes to this check, so the web version skips it.)
+    const screenReader = Platform.OS !== 'web' && (await AccessibilityInfo.isScreenReaderEnabled().catch(() => false));
+    let result: { kept: SavedScan[]; removed: SavedScan[] };
     try {
-      setScans(await deleteScan(id));
+      result = await removeScans(ids);
     } catch {
       return;
     }
-    // If that scan is the one on screen, go back to the start.
-    setState((prev) => (prev.kind === 'result' && prev.savedId === id ? { kind: 'idle' } : prev));
-    announce('Removed from My scans.');
+    finishRemoval(); // an earlier removal can no longer be undone
+    setScans(result.kept);
+    // If the scan on screen was removed, go back to the start.
+    setState((prev) => (prev.kind === 'result' && prev.savedId && ids.includes(prev.savedId) ? { kind: 'idle' } : prev));
+    pendingRemoval.current = result.removed;
+    setUndoMessage(message);
+    undoTimer.current = setTimeout(finishRemoval, screenReader ? UNDO_MS_SCREEN_READER : UNDO_MS);
+    announce(`${message}. Undo is available for a few seconds.`);
+  }
+
+  /** The chance to undo has passed: delete the removed scans' photos and hide the Undo bar. */
+  function finishRemoval() {
+    clearTimeout(undoTimer.current);
+    deletePhotos(pendingRemoval.current);
+    pendingRemoval.current = [];
+    setUndoMessage(null);
+  }
+
+  async function undoRemoval() {
+    clearTimeout(undoTimer.current);
+    const removed = pendingRemoval.current;
+    pendingRemoval.current = [];
+    setUndoMessage(null);
+    try {
+      setScans(await restoreScans(removed));
+      announce('Put back in My scans.');
+    } catch {
+      // Couldn't put them back; the leftover photos are tidied up next time the app opens.
+    }
   }
 
   const match = state.kind === 'result' ? findFigureForScan(state.result.name, state.result.theme) : undefined;
+  // Older saved scans of the figure on screen, so a re-scan (say, in better light) can replace them.
+  const shown = state.kind === 'result' && state.savedId ? scans.find((scan) => scan.id === state.savedId) : undefined;
+  const earlier = shown
+    ? scans.filter((s) => s.id !== shown.id && s.createdAt < shown.createdAt && sameFigure(s.result.name, shown.result.name))
+    : [];
 
   return (
     <Baseplate>
       <ScrollView
         ref={scrollRef}
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}
+        // Extra room at the bottom while the Undo bar is showing, so it never hides the last scan.
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }, undoMessage ? styles.roomForUndo : null]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.logo}>
@@ -239,8 +304,15 @@ export default function ScanScreen() {
               onScanAnother={() => startScan(lastSource.current)}
               onClose={goHome}
               marketplaceName={match?.name}
-              onOpenMarketplace={match ? () => router.push(`/marketplace/${match.id}`) : undefined}
-              onRemove={state.savedId ? () => removeScan(state.savedId!) : undefined}
+              onOpenMarketplace={match ? () => router.push(`/figure/${match.id}`) : undefined}
+              onRemove={state.savedId ? () => removeFromHistory([state.savedId!], `Removed ${state.result.name}`) : undefined}
+              earlierScans={earlier.length}
+              onReplaceEarlier={() =>
+                removeFromHistory(
+                  earlier.map((s) => s.id),
+                  earlier.length === 1 ? 'Replaced your earlier scan' : `Replaced ${earlier.length} earlier scans`,
+                )
+              }
             />
             <View style={[styles.disclaimerBox, { backgroundColor: t.card }]}>
               <Ionicons name="information-circle-outline" size={18} color={t.textMuted} />
@@ -280,16 +352,18 @@ export default function ScanScreen() {
         <ScanHistory
           scans={scans}
           onOpen={openSavedScan}
-          onDelete={(scan) => removeScan(scan.id)}
+          onDelete={(scan) => removeFromHistory([scan.id], `Removed ${scan.result.name}`)}
           backgroundScans={state.kind === 'analyzing' ? inProgress - 1 : inProgress}
         />
       </ScrollView>
+      {undoMessage ? <UndoBar message={undoMessage} onUndo={undoRemoval} /> : null}
     </Baseplate>
   );
 }
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 16, paddingBottom: 32, gap: 20 },
+  roomForUndo: { paddingBottom: 100 },
   logo: { alignItems: 'center' },
   hero: { gap: 8 },
   title: { fontFamily: fonts.title, fontSize: 30, lineHeight: 34 },

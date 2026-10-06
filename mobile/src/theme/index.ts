@@ -36,6 +36,8 @@ export type Palette = {
   danger: string;
   /** Prices shown as plain text (green that stays readable on the card). */
   priceText: string;
+  /** The short-lived bar at the bottom with an Undo button. */
+  toast: string;
 };
 
 const light: Palette = {
@@ -60,6 +62,7 @@ const light: Palette = {
   link: '#0055BF',
   danger: '#B30E10',
   priceText: '#237841',
+  toast: '#1B1F23',
 };
 
 const dark: Palette = {
@@ -84,6 +87,7 @@ const dark: Palette = {
   link: '#7FB2FF',
   danger: '#FF8A8A',
   priceText: '#4FBF77',
+  toast: '#454A50',
 };
 
 /** Returns the light or dark palette, following the phone's appearance setting. */

@@ -12,9 +12,9 @@ export function formatRange([low, high]: [number, number]): string {
   return `${formatPrice(low)}–${formatPrice(high)}`;
 }
 
-/** "Star Wars · 2003" (skips whatever is missing) */
-export function themeAndYear(theme: string, year: number | null): string {
-  return [theme, year ? String(year) : ''].filter(Boolean).join(' · ');
+/** "Star Wars · 2003" (skips whatever is missing). With approximate, "Star Wars · around 2003". */
+export function themeAndYear(theme: string, year: number | null, approximate = false): string {
+  return [theme, year ? `${approximate ? 'around ' : ''}${year}` : ''].filter(Boolean).join(' · ');
 }
 
 export function formatDate(iso: string): string {

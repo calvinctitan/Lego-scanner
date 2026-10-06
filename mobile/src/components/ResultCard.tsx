@@ -25,16 +25,20 @@ type Props = {
   onOpenMarketplace?: () => void;
   /** Set when the scan is saved in "My scans". */
   onRemove?: () => void;
+  /** How many older scans of the same figure are in "My scans". */
+  earlierScans?: number;
+  onReplaceEarlier?: () => void;
 };
 
 export function ResultCard(props: Props) {
   const { photoUri, result, estimatedAt, marketplaceName } = props;
   const t = useTheme();
   const photoHeight = usePhotoHeight();
-  const subtitle = themeAndYear(result.theme, result.year);
+  const unsure = result.confidence === 'low';
+  const subtitle = themeAndYear(result.theme, result.year, unsure);
 
   // When Claude isn't sure, mark the prices as rough. Both bricks use one font size so they match.
-  const rough = result.confidence === 'low' ? '≈ ' : '';
+  const rough = unsure ? '≈ ' : '';
   const used = rough + formatRange(result.valueUsed);
   const fresh = rough + formatRange(result.valueNew);
   const fontSize = Math.min(priceFontSize(used), priceFontSize(fresh));
@@ -60,7 +64,7 @@ export function ResultCard(props: Props) {
         <RarityBadge rarity={result.rarity} />
       </View>
 
-      {result.confidence === 'low' ? (
+      {unsure ? (
         <View style={[styles.warning, { backgroundColor: t.warningBackground }]}>
           <Ionicons name="help-circle" size={20} color={t.warningText} />
           <Text style={[styles.warningText, { color: t.warningText }]}>
@@ -75,7 +79,8 @@ export function ResultCard(props: Props) {
       </View>
       <View style={styles.explain}>
         <Text style={[styles.caption, { color: t.textMuted }]}>
-          Used: complete, with its usual accessories. New: never opened. Estimated by AI on {formatDate(estimatedAt)}.
+          Used: complete, with its usual accessories. New: never opened. An AI estimate of typical eBay and BrickLink
+          sale prices, made {formatDate(estimatedAt)}.
         </Text>
         <TextLink icon="trending-up" label="Recent sold prices on eBay" onPress={props.onSeeSoldPrices} />
       </View>
@@ -90,6 +95,16 @@ export function ResultCard(props: Props) {
         <BrickButton label="Scan another" icon="camera" color={brand.red} onPress={props.onScanAnother} />
       </View>
 
+      {props.earlierScans && props.onReplaceEarlier ? (
+        <View>
+          <Text style={[styles.caption, { color: t.textMuted }]}>You’ve scanned this figure before.</Text>
+          <TextLink
+            icon="swap-horizontal"
+            label={props.earlierScans === 1 ? 'Replace the earlier scan' : `Replace the ${props.earlierScans} earlier scans`}
+            onPress={props.onReplaceEarlier}
+          />
+        </View>
+      ) : null}
       {marketplaceName && props.onOpenMarketplace ? (
         <TextLink icon="storefront-outline" label={`See ${marketplaceName} in the Marketplace`} onPress={props.onOpenMarketplace} />
       ) : null}

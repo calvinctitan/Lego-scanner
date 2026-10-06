@@ -14,6 +14,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { brand, useTheme } from '../theme';
 
+// The tabs always sit at the bottom of the stack, under any figure page opened from a scan.
+export const unstable_settings = { anchor: '(tabs)' };
+
 // Keep the splash screen up until the fonts are ready, so text never flashes in the wrong font.
 SplashScreen.preventAutoHideAsync().catch(() => {});
 

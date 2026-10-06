@@ -30,21 +30,53 @@ export async function loadScans(): Promise<SavedScan[]> {
   }
 }
 
-/** Removes one scan from "My scans" and deletes its photo. Returns the updated list. */
-export async function deleteScan(id: string): Promise<SavedScan[]> {
+/**
+ * Takes scans out of "My scans". Their photos stay until deletePhotos() runs, so Undo can bring
+ * them back. Returns the updated list and the scans that were taken out.
+ */
+export async function removeScans(ids: string[]): Promise<{ kept: SavedScan[]; removed: SavedScan[] }> {
   const all = await loadScans();
-  const removed = all.find((s) => s.id === id);
-  const kept = all.filter((s) => s.id !== id);
+  const kept = all.filter((s) => !ids.includes(s.id));
+  const removed = all.filter((s) => ids.includes(s.id));
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(kept));
-  if (removed && Platform.OS !== 'web') {
+  return { kept, removed };
+}
+
+/** Undo: puts removed scans back in "My scans", in date order (newest first). Returns the updated list. */
+export async function restoreScans(removed: SavedScan[]): Promise<SavedScan[]> {
+  const all = await loadScans();
+  const restored = [...all, ...removed.filter((r) => !all.some((s) => s.id === r.id))];
+  restored.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(restored));
+  return restored;
+}
+
+/** Deletes the saved photos of scans that are gone for good. (On the web, photos live inside the list itself.) */
+export function deletePhotos(scans: SavedScan[]): void {
+  if (Platform.OS === 'web') return;
+  for (const scan of scans) {
     try {
-      const file = new File(scansFolder(), removed.photoFile);
+      const file = new File(scansFolder(), scan.photoFile);
       if (file.exists) file.delete();
     } catch {
       // A missing file is fine.
     }
   }
-  return kept;
+}
+
+/** Deletes photos that no saved scan uses, for example if the app closed while Undo was still showing. */
+export function cleanUpPhotos(scans: SavedScan[]): void {
+  if (Platform.OS === 'web') return;
+  try {
+    const folder = scansFolder();
+    if (!folder.exists) return;
+    const inUse = new Set(scans.map((s) => s.photoFile));
+    for (const item of folder.list()) {
+      if (item instanceof File && !inUse.has(item.name)) item.delete();
+    }
+  } catch {
+    // Not important: it can be tidied up next time.
+  }
 }
 
 /** Web only: a small JPEG thumbnail as text, because a browser's temporary photo link stops working on reload. */
@@ -77,16 +109,7 @@ export async function saveScan(tempPhotoUri: string, result: ScanResult): Promis
   const kept = all.slice(0, MAX_SCANS);
 
   // Clean up photos of scans that fell off the end of the list.
-  if (Platform.OS !== 'web') {
-    for (const old of all.slice(MAX_SCANS)) {
-      try {
-        const file = new File(scansFolder(), old.photoFile);
-        if (file.exists) file.delete();
-      } catch {
-        // A missing file is fine.
-      }
-    }
-  }
+  deletePhotos(all.slice(MAX_SCANS));
 
   if (Platform.OS === 'web') {
     // If browser storage is full, drop the oldest scans until the list fits.

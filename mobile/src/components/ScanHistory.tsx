@@ -25,15 +25,23 @@ export function ScanHistory({ scans, onOpen, onDelete, backgroundScans = 0 }: Pr
     ([low, high], scan) => [low + scan.result.valueUsed[0], high + scan.result.valueUsed[1]],
     [0, 0],
   );
+  // The total is only as sure as its least sure scan.
+  const unsure = scans.filter((scan) => scan.result.confidence === 'low').length;
 
   return (
     <View style={styles.section}>
       <View style={styles.headingRow}>
         <Text style={[styles.heading, { color: t.text }]}>My scans</Text>
         {scans.length > 1 ? (
-          <View style={[styles.totalPill, { backgroundColor: t.card, borderColor: t.border }]}>
+          <View
+            style={[styles.totalPill, { backgroundColor: t.card, borderColor: t.border }]}
+            accessible
+            accessibilityLabel={`Total value of your scans, used: ${unsure ? 'about ' : ''}${formatRange(total)}${
+              unsure ? `, including ${unsure} you’re not sure about` : ''
+            }`}
+          >
             <Text style={[styles.totalText, { color: t.text }]}>
-              Total used: <Text style={{ color: t.priceText }}>{formatRange(total)}</Text>
+              Total value: <Text style={{ color: t.priceText }}>{unsure ? '≈ ' : ''}{formatRange(total)}</Text> used
             </Text>
           </View>
         ) : null}
