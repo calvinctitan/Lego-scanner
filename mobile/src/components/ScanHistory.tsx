@@ -47,6 +47,12 @@ export function ScanHistory({ scans, onOpen, onDelete, backgroundScans = 0 }: Pr
         ) : null}
       </View>
 
+      {scans.length > 1 && unsure ? (
+        <Text style={[styles.totalNote, { color: t.textMuted }]}>
+          ≈ The total includes {unsure === 1 ? '1 scan' : `${unsure} scans`} marked “Not sure”.
+        </Text>
+      ) : null}
+
       {backgroundScans > 0 ? (
         <View style={[styles.pending, { backgroundColor: t.card }]} accessibilityLiveRegion="polite">
           <ActivityIndicator size="small" color={t.textMuted} />
@@ -159,6 +165,7 @@ const styles = StyleSheet.create({
   heading: { fontFamily: fonts.title, fontSize: 24 },
   totalPill: { borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: 12, paddingVertical: 5 },
   totalText: { fontFamily: fonts.bodyHeavy, fontSize: 14 },
+  totalNote: { fontFamily: fonts.bodySemiBold, fontSize: 13, marginTop: -6 },
   empty: { fontFamily: fonts.bodySemiBold, fontSize: 15, textAlign: 'center' },
   pending: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 14, padding: 12 },
   pendingText: { flex: 1, fontFamily: fonts.bodySemiBold, fontSize: 14 },

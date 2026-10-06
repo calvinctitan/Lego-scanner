@@ -5,11 +5,13 @@ import { brand, fonts, useTheme } from '../theme';
 
 type Props = {
   message: string;
-  onUndo: () => void;
+  /** The button's word, like "Undo". */
+  actionLabel: string;
+  onAction: () => void;
 };
 
-/** A bar that floats at the bottom of the screen for a few seconds, like "Removed Mr. Gold   Undo". */
-export function UndoBar({ message, onUndo }: Props) {
+/** A bar that floats at the bottom of the screen with one button, like "Removed Mr. Gold   Undo". */
+export function ActionBar({ message, actionLabel, onAction }: Props) {
   const t = useTheme();
   return (
     <Animated.View
@@ -21,14 +23,14 @@ export function UndoBar({ message, onUndo }: Props) {
         {message}
       </Text>
       <Pressable
-        onPress={onUndo}
+        onPress={onAction}
         accessibilityRole="button"
-        accessibilityLabel={`Undo. ${message}`}
+        accessibilityLabel={`${actionLabel}. ${message}`}
         hitSlop={10}
-        style={({ pressed }) => [styles.undo, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.action, pressed && styles.pressed]}
       >
-        <Text style={styles.undoText} maxFontSizeMultiplier={1.3}>
-          Undo
+        <Text style={styles.actionText} maxFontSizeMultiplier={1.3}>
+          {actionLabel}
         </Text>
       </Pressable>
     </Animated.View>
@@ -55,7 +57,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   message: { flex: 1, color: '#FFFFFF', fontFamily: fonts.bodyBold, fontSize: 15 },
-  undo: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 },
-  undoText: { color: brand.yellow, fontFamily: fonts.title, fontSize: 18 },
+  action: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 },
+  actionText: { color: brand.yellow, fontFamily: fonts.title, fontSize: 18 },
   pressed: { opacity: 0.6 },
 });

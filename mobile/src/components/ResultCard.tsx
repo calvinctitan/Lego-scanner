@@ -107,7 +107,9 @@ export function ResultCard(props: Props) {
       ) : null}
       {marketplaceName && props.onOpenMarketplace ? (
         <TextLink icon="storefront-outline" label={`See ${marketplaceName} in the Marketplace`} onPress={props.onOpenMarketplace} />
-      ) : null}
+      ) : (
+        <Text style={[styles.caption, { color: t.textMuted }]}>This figure isn’t in the Marketplace yet.</Text>
+      )}
       {props.onRemove ? <TextLink icon="trash-outline" label="Remove from My scans" tone="danger" onPress={props.onRemove} /> : null}
     </Tile>
   );

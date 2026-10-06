@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Image, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ActionBar } from '../../components/ActionBar';
 import { Baseplate } from '../../components/Baseplate';
 import { BrickButton } from '../../components/BrickButton';
 import { Logo } from '../../components/Logo';
@@ -13,7 +14,6 @@ import { ScanHistory } from '../../components/ScanHistory';
 import { StackingBricks } from '../../components/StackingBricks';
 import { TextLink } from '../../components/TextLink';
 import { Tile } from '../../components/Tile';
-import { UndoBar } from '../../components/UndoBar';
 import { findFigureForScan } from '../../data/figures';
 import { analyzePhoto, ScanCancelledError } from '../../lib/api';
 import { formatPrice } from '../../lib/format';
@@ -30,9 +30,19 @@ type PhotoSource = 'camera' | 'library';
 type ScanState =
   | { kind: 'idle' }
   | { kind: 'analyzing'; scanId: number; photoUri: string }
-  | { kind: 'result'; photoUri: string; result: ScanResult; estimatedAt: string; savedId?: string }
+  | {
+      kind: 'result';
+      photoUri: string;
+      result: ScanResult;
+      estimatedAt: string;
+      savedId?: string;
+      /** True right after scanning (not when reopened from "My scans"). */
+      fresh?: boolean;
+      /** The offer to replace an earlier scan of this figure has gone away. */
+      offerClosed?: boolean;
+    }
   | { kind: 'notFigure'; photoUri: string }
-  | { kind: 'error'; message: string; photo?: PreparedPhoto };
+  | { kind: 'error'; message: string; photo?: PreparedPhoto; attempt?: number };
 
 /** "$8 to $15", read out by VoiceOver. */
 function spokenRange([low, high]: [number, number]): string {
@@ -49,9 +59,9 @@ function sameFigure(a: string, b: string): boolean {
   return a.trim().toLowerCase() === b.trim().toLowerCase();
 }
 
-// Long enough to notice a mistake; VoiceOver users get longer to reach the Undo button.
-const UNDO_MS = 6000;
-const UNDO_MS_SCREEN_READER = 15000;
+// The bar at the bottom (Undo, or Replace) stays until the person does something else, or this long.
+// With VoiceOver on it has no time limit.
+const BAR_MS = 30000;
 // A failed retry still shows the "Looking closely" screen this long, so it's clear it tried again.
 const MIN_ATTEMPT_MS = 900;
 
@@ -95,6 +105,21 @@ export default function ScanScreen() {
     };
   }, []);
 
+  // VoiceOver users get as long as they need to reach the bar's button. (Browsers always say a
+  // screen reader is on, so the web version doesn't ask.)
+  const screenReader = useRef(false);
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    AccessibilityInfo.isScreenReaderEnabled()
+      .then((on) => (screenReader.current = on))
+      .catch(() => {});
+    const subscription = AccessibilityInfo.addEventListener('screenReaderChanged', (on) => (screenReader.current = on));
+    return () => subscription.remove();
+  }, []);
+
+  // Going to another tab counts as moving on, so a removal can no longer be undone.
+  useEffect(() => navigation.addListener('blur', finishRemoval), [navigation]);
+
   // Tapping the Scan tab while already on it goes back to the start.
   useEffect(
     () =>
@@ -120,6 +145,7 @@ export default function ScanScreen() {
 
   async function startScan(source: PhotoSource) {
     if (preparing.current) return;
+    finishRemoval();
     preparing.current = true;
     setBusy(true);
     lastSource.current = source;
@@ -138,7 +164,7 @@ export default function ScanScreen() {
     if (photo) await analyze(photo);
   }
 
-  async function analyze(photo: PreparedPhoto) {
+  async function analyze(photo: PreparedPhoto, attempt = 1) {
     const startedAt = Date.now();
     const scanId = ++nextScanId.current;
     const controller = new AbortController();
@@ -162,7 +188,7 @@ export default function ScanScreen() {
         return;
       }
       if (stillWatching()) {
-        show({ kind: 'result', photoUri: photo.uri, result, estimatedAt: new Date().toISOString() });
+        show({ kind: 'result', photoUri: photo.uri, result, estimatedAt: new Date().toISOString(), fresh: true });
         announce(
           `${result.name}. Used ${spokenRange(result.valueUsed)}. New ${spokenRange(result.valueNew)}.` +
             (result.confidence === 'low' ? ' Not sure about this one. Try a clearer photo on a plain background.' : ''),
@@ -186,7 +212,7 @@ export default function ScanScreen() {
       if (controller.signal.aborted || !stillWatching()) return;
       const message = e instanceof Error ? e.message : 'Something went wrong. Please try again.';
       // Keep the photo so "Try again" can send it again once the connection is back.
-      show({ kind: 'error', message, photo });
+      show({ kind: 'error', message, photo, attempt });
       announce(message);
     } finally {
       running.current.delete(scanId);
@@ -202,19 +228,18 @@ export default function ScanScreen() {
   }
 
   function tryAgain() {
-    if (state.kind === 'error' && state.photo) analyze(state.photo);
+    if (state.kind === 'error' && state.photo) analyze(state.photo, (state.attempt ?? 1) + 1);
     else startScan(lastSource.current);
   }
 
   function openSavedScan(scan: SavedScan) {
+    finishRemoval();
     show({ kind: 'result', photoUri: scanPhotoUri(scan), result: scan.result, estimatedAt: scan.createdAt, savedId: scan.id });
     scrollToTop();
   }
 
-  /** Takes scans out of "My scans", with a few seconds to undo it. */
+  /** Takes scans out of "My scans". Undo stays at the bottom until the person moves on (or BAR_MS passes). */
   async function removeFromHistory(ids: string[], message: string) {
-    // (Browsers always answer yes to this check, so the web version skips it.)
-    const screenReader = Platform.OS !== 'web' && (await AccessibilityInfo.isScreenReaderEnabled().catch(() => false));
     let result: { kept: SavedScan[]; removed: SavedScan[] };
     try {
       result = await removeScans(ids);
@@ -227,11 +252,11 @@ export default function ScanScreen() {
     setState((prev) => (prev.kind === 'result' && prev.savedId && ids.includes(prev.savedId) ? { kind: 'idle' } : prev));
     pendingRemoval.current = result.removed;
     setUndoMessage(message);
-    undoTimer.current = setTimeout(finishRemoval, screenReader ? UNDO_MS_SCREEN_READER : UNDO_MS);
-    announce(`${message}. Undo is available for a few seconds.`);
+    if (!screenReader.current) undoTimer.current = setTimeout(finishRemoval, BAR_MS);
+    announce(`${message}. Undo is at the bottom of the screen.`);
   }
 
-  /** The chance to undo has passed: delete the removed scans' photos and hide the Undo bar. */
+  /** The chance to undo has passed (or the person moved on): delete the removed scans' photos and hide the Undo bar. */
   function finishRemoval() {
     clearTimeout(undoTimer.current);
     deletePhotos(pendingRemoval.current);
@@ -244,6 +269,8 @@ export default function ScanScreen() {
     const removed = pendingRemoval.current;
     pendingRemoval.current = [];
     setUndoMessage(null);
+    // Undoing a replace means "keep both", so don't ask about replacing again.
+    setState((prev) => (prev.kind === 'result' ? { ...prev, offerClosed: true } : prev));
     try {
       setScans(await restoreScans(removed));
       announce('Put back in My scans.');
@@ -258,13 +285,33 @@ export default function ScanScreen() {
   const earlier = shown
     ? scans.filter((s) => s.id !== shown.id && s.createdAt < shown.createdAt && sameFigure(s.result.name, shown.result.name))
     : [];
+  const replaceEarlier = () =>
+    removeFromHistory(
+      earlier.map((s) => s.id),
+      earlier.length === 1 ? 'Replaced your earlier scan' : `Replaced ${earlier.length} earlier scans`,
+    );
+
+  // Right after scanning a figure that's already in "My scans", ask at the bottom of the screen
+  // (where it can't be missed) whether to replace the earlier scan, so the total doesn't count it twice.
+  const offerFor =
+    state.kind === 'result' && state.fresh && !state.offerClosed && earlier.length > 0 && !undoMessage ? state.savedId : undefined;
+  useEffect(() => {
+    if (!offerFor) return;
+    announce('Already in My scans. You can replace the earlier scan with the button at the bottom of the screen.');
+    if (screenReader.current) return;
+    const timer = setTimeout(
+      () => setState((prev) => (prev.kind === 'result' && prev.savedId === offerFor ? { ...prev, offerClosed: true } : prev)),
+      BAR_MS,
+    );
+    return () => clearTimeout(timer);
+  }, [offerFor]);
 
   return (
     <Baseplate>
       <ScrollView
         ref={scrollRef}
-        // Extra room at the bottom while the Undo bar is showing, so it never hides the last scan.
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }, undoMessage ? styles.roomForUndo : null]}
+        // Extra room at the bottom while a bar is showing, so it never hides the last scan.
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }, undoMessage || offerFor ? styles.roomForBar : null]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.logo}>
@@ -307,12 +354,7 @@ export default function ScanScreen() {
               onOpenMarketplace={match ? () => router.push(`/figure/${match.id}`) : undefined}
               onRemove={state.savedId ? () => removeFromHistory([state.savedId!], `Removed ${state.result.name}`) : undefined}
               earlierScans={earlier.length}
-              onReplaceEarlier={() =>
-                removeFromHistory(
-                  earlier.map((s) => s.id),
-                  earlier.length === 1 ? 'Replaced your earlier scan' : `Replaced ${earlier.length} earlier scans`,
-                )
-              }
+              onReplaceEarlier={replaceEarlier}
             />
             <View style={[styles.disclaimerBox, { backgroundColor: t.card }]}>
               <Ionicons name="information-circle-outline" size={18} color={t.textMuted} />
@@ -344,6 +386,9 @@ export default function ScanScreen() {
             <Ionicons name="alert-circle" size={36} color={brand.red} />
             <Text style={[styles.status, { color: t.text }]}>Oops, that didn’t work</Text>
             <Text style={[styles.help, { color: t.textMuted }]}>{state.message}</Text>
+            {state.attempt && state.attempt > 1 ? (
+              <Text style={[styles.attempts, { color: t.text }]}>Tried {state.attempt} times.</Text>
+            ) : null}
             <BrickButton label="Try again" icon="refresh" color={brand.red} onPress={tryAgain} style={styles.fullWidth} />
             <TextLink label={state.photo ? 'Use a different photo' : 'Back to start'} onPress={goHome} />
           </Tile>
@@ -356,14 +401,18 @@ export default function ScanScreen() {
           backgroundScans={state.kind === 'analyzing' ? inProgress - 1 : inProgress}
         />
       </ScrollView>
-      {undoMessage ? <UndoBar message={undoMessage} onUndo={undoRemoval} /> : null}
+      {undoMessage ? (
+        <ActionBar message={undoMessage} actionLabel="Undo" onAction={undoRemoval} />
+      ) : offerFor ? (
+        <ActionBar message="Already in My scans. Replace the earlier scan?" actionLabel="Replace" onAction={replaceEarlier} />
+      ) : null}
     </Baseplate>
   );
 }
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 16, paddingBottom: 32, gap: 20 },
-  roomForUndo: { paddingBottom: 100 },
+  roomForBar: { paddingBottom: 100 },
   logo: { alignItems: 'center' },
   hero: { gap: 8 },
   title: { fontFamily: fonts.title, fontSize: 30, lineHeight: 34 },
@@ -374,6 +423,7 @@ const styles = StyleSheet.create({
   errorPhoto: { width: '100%', height: 140, borderRadius: 12 },
   status: { fontFamily: fonts.title, fontSize: 21, textAlign: 'center' },
   help: { fontFamily: fonts.bodySemiBold, fontSize: 15, lineHeight: 21, textAlign: 'center' },
+  attempts: { fontFamily: fonts.bodyBold, fontSize: 14, textAlign: 'center' },
   stop: { minWidth: 140 },
   fullWidth: { alignSelf: 'stretch' },
   resultBlock: { gap: 12 },

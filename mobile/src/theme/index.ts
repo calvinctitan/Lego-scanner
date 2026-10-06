@@ -36,7 +36,7 @@ export type Palette = {
   danger: string;
   /** Prices shown as plain text (green that stays readable on the card). */
   priceText: string;
-  /** The short-lived bar at the bottom with an Undo button. */
+  /** The bar at the bottom with one button, such as Undo. */
   toast: string;
 };
 

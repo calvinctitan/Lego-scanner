@@ -70,7 +70,7 @@ export function FigureDetail({ fullScreen = false }: Props) {
               <View style={styles.priceBlock}>
                 <PriceBrick label="Typical price, used" value={formatPrice(figure.priceUsed)} color={brand.green} big />
                 <Text style={[styles.caption, { color: t.textMuted }]}>
-                  A rough guide to what a complete, used one sells for. Prices change, so check recent sales.
+                  An estimate of what a complete, used one typically sells for on eBay and BrickLink. Prices change, so check recent sales.
                 </Text>
                 <TextLink icon="trending-up" label="Recent sold prices on eBay" onPress={() => openInAppBrowser(ebaySoldUrl(figure.name))} />
               </View>
