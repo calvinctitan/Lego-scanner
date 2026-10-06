@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { formatDate, formatRange } from '../lib/format';
 import { scanPhotoUri } from '../lib/scanHistory';
@@ -10,16 +10,26 @@ import { Tile } from './Tile';
 type Props = {
   scans: SavedScan[];
   onOpen: (scan: SavedScan) => void;
+  /** Scans still being checked while something else is on screen. */
+  backgroundScans?: number;
 };
 
 /** The "My scans" list: past scans saved on this phone. */
-export function ScanHistory({ scans, onOpen }: Props) {
+export function ScanHistory({ scans, onOpen, backgroundScans = 0 }: Props) {
   const t = useTheme();
 
   return (
     <View style={styles.section}>
       <Text style={[styles.heading, { color: t.text }]}>My scans</Text>
-      {scans.length === 0 ? (
+      {backgroundScans > 0 ? (
+        <View style={styles.pending} accessibilityLiveRegion="polite">
+          <ActivityIndicator size="small" color={t.textMuted} />
+          <Text style={[styles.pendingText, { color: t.textMuted }]}>
+            {backgroundScans === 1 ? 'One scan is' : `${backgroundScans} scans are`} still being checked. It’ll appear here when it’s done.
+          </Text>
+        </View>
+      ) : null}
+      {scans.length === 0 && backgroundScans === 0 ? (
         <Tile>
           <Text style={[styles.empty, { color: t.textMuted }]}>Your scans will show up here.</Text>
         </Tile>
@@ -60,6 +70,8 @@ const styles = StyleSheet.create({
   section: { gap: 10 },
   heading: { fontFamily: fonts.title, fontSize: 24, marginBottom: 2 },
   empty: { fontFamily: fonts.bodySemiBold, fontSize: 15, textAlign: 'center' },
+  pending: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  pendingText: { flex: 1, fontFamily: fonts.bodySemiBold, fontSize: 14 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10 },
   thumb: { width: 64, height: 64, borderRadius: 10 },
   info: { flex: 1, gap: 1 },

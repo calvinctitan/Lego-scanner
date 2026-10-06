@@ -14,7 +14,9 @@ export function FigureArt({ name, theme, big }: { name: string; theme: string; b
       size={big ? 'lg' : 'sm'}
       contentStyle={[styles.face, { height: big ? 170 : 84 }]}
     >
-      <Text style={[styles.initials, { color: textOn(color), fontSize: big ? 72 : 36 }]}>{initials(name)}</Text>
+      <Text style={[styles.initials, { color: textOn(color), fontSize: big ? 72 : 36 }]} maxFontSizeMultiplier={1.3}>
+        {initials(name)}
+      </Text>
     </Brick>
   );
 }

@@ -18,12 +18,15 @@ export function PriceBrick({ label, value, color, big, style }: Props) {
   const fontSize = big ? 34 : value.length > 11 ? 17 : value.length > 8 ? 20 : 24;
   return (
     <Brick color={color} size={big ? 'md' : 'sm'} style={style} contentStyle={[styles.face, big && styles.faceBig]}>
-      <Text style={[styles.label, { color: fg }]}>{label}</Text>
+      <Text style={[styles.label, { color: fg }]} maxFontSizeMultiplier={1.3}>
+        {label}
+      </Text>
       <Text
         style={[styles.value, { color: fg, fontSize, lineHeight: Math.round(fontSize * 1.25) }]}
         numberOfLines={1}
         adjustsFontSizeToFit
-        minimumFontScale={0.7}
+        minimumFontScale={0.5}
+        maxFontSizeMultiplier={1.3}
       >
         {value}
       </Text>

@@ -38,8 +38,8 @@ export function BrickButton({ label, color, onPress, icon, variant = 'regular', 
     >
       {({ pressed }) => (
         <Brick color={color} size={variant === 'small' ? 'sm' : 'md'} pressed={pressed} contentStyle={[styles.face, { minHeight: v.height }]}>
-          {icon ? <Ionicons name={icon} size={v.icon} color={fg} /> : null}
-          <Text style={[styles.label, { color: fg, fontSize: v.font }]} numberOfLines={1}>
+          {icon ? <Ionicons name={icon} size={v.icon} color={fg} maxFontSizeMultiplier={1.3} /> : null}
+          <Text style={[styles.label, { color: fg, fontSize: v.font }]} numberOfLines={1} maxFontSizeMultiplier={1.3}>
             {label}
           </Text>
         </Brick>

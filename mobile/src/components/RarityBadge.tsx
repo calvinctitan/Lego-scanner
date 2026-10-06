@@ -14,7 +14,7 @@ export function RarityBadge({ rarity }: { rarity: Rarity }) {
   const bg = RARITY_COLORS[rarity] ?? RARITY_COLORS.Common;
   return (
     <View style={[styles.badge, { backgroundColor: bg, borderBottomColor: shade(bg, -0.3) }]}>
-      <Text style={[styles.text, { color: textOn(bg) }]}>
+      <Text style={[styles.text, { color: textOn(bg) }]} maxFontSizeMultiplier={1.5}>
         {rarity === 'Very rare' ? '★ ' : ''}
         {rarity}
       </Text>

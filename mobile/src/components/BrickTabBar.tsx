@@ -44,13 +44,15 @@ export function BrickTabBar({ state, navigation }: BottomTabBarProps) {
             <View style={styles.iconSlot}>
               {focused ? (
                 <Brick color={tab.color} studs={2} size="xs" style={{ width: 46 }} contentStyle={styles.iconBrick}>
-                  <Ionicons name={tab.icon} size={18} color="#FFFFFF" />
+                  <Ionicons name={tab.icon} size={18} color="#FFFFFF" maxFontSizeMultiplier={1} />
                 </Brick>
               ) : (
-                <Ionicons name={tab.iconIdle} size={24} color={t.textMuted} />
+                <Ionicons name={tab.iconIdle} size={24} color={t.textMuted} maxFontSizeMultiplier={1} />
               )}
             </View>
-            <Text style={[styles.label, { color: focused ? t.text : t.textMuted }]}>{tab.label}</Text>
+            <Text style={[styles.label, { color: focused ? t.text : t.textMuted }]} maxFontSizeMultiplier={1.3}>
+              {tab.label}
+            </Text>
           </Pressable>
         );
       })}

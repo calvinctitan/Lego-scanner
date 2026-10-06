@@ -24,13 +24,13 @@ This guide assumes you've never built an app before. Follow the steps in order, 
 1. **Node.js**: the engine that runs the tools. Download the **LTS** version from <https://nodejs.org> and install it like any other program.
 2. **A terminal**: the text window where you type commands.
    - Mac: press <kbd>⌘ Space</kbd>, type **Terminal**, press Enter.
-   - Windows: press Start, type **PowerShell**, press Enter.
+   - Windows: press Start, type **cmd**, and open **Command Prompt**. (Use Command Prompt rather than PowerShell: PowerShell often blocks the `npm` and `npx` commands this guide uses.)
 
    Check Node worked by typing this and pressing Enter:
    ```bash
    node --version
    ```
-   You should see something like `v24.x.x` (any version 20.19 or newer is fine).
+   You should see something like `v24.x.x`. Version 24 or newer is ideal (22.13 or newer also works).
 3. **Expo Go** on your iPhone: install it from the App Store (search "Expo Go").
 4. **A Claude API key**:
    1. Go to <https://platform.claude.com> and sign in (or create an account).
@@ -108,7 +108,7 @@ Open the file `mobile/src/config.ts` in any text editor (TextEdit or Notepad wor
 export const BACKEND_URL = 'https://legara-backend.vercel.app';
 ```
 
-Save the file. (This address isn't a secret. The secret key stays on Vercel.)
+Keep the `https://` at the start and don't add `/api/scan` at the end. Save the file. (This address isn't a secret. The secret key stays on Vercel.)
 
 ---
 
@@ -128,7 +128,11 @@ A big QR code appears in the terminal.
 2. Open the iPhone's **Camera** app, point it at the QR code, and tap the **Open in Expo Go** banner.
 3. Legará opens. The first load takes a little while.
 
-While `npx expo start` is running, any change you save to the code shows up on your phone automatically. To stop it, click the terminal and press <kbd>Ctrl</kbd> + <kbd>C</kbd>. To run the app again later, just do `cd mobile` and `npx expo start`.
+While `npx expo start` is running, any change you save to the code shows up on your phone automatically. To stop it, click the terminal and press <kbd>Ctrl</kbd> + <kbd>C</kbd>.
+
+**To run the app again later:** if that terminal is still open in the `mobile` folder, just run `npx expo start`. In a new terminal window, first go into the project folder the same way as in Step 1 (type `cd ` with a space, drag the project folder in, press Enter), then run `cd mobile` and `npx expo start`.
+
+> **Want to see it on your computer too?** While `npx expo start` is running, press <kbd>w</kbd> in the terminal to open the app in your web browser.
 
 > **QR code won't connect?** Stop it with <kbd>Ctrl</kbd> + <kbd>C</kbd> and run `npx expo start --tunnel` instead (say yes if it offers to install something). This works even across different networks.
 
@@ -191,13 +195,15 @@ The app quietly counts how many scans you do each day, saved only on your phone.
 | "Claude couldn't use that request" | Most often your Claude credit has run out. Check **Billing** in the Claude Console. For details, open your project on vercel.com → **Logs**. |
 | Expo Go says the project is incompatible | Update Expo Go from the App Store. This project uses Expo SDK 57. |
 | The camera won't open | iPhone **Settings** → **Expo Go** → turn on **Camera**. |
+| Windows says "running scripts is disabled on this system" | You're in PowerShell. Close it and use **Command Prompt** instead (Start → type `cmd`). |
 
 ---
 
 ## Keeping things safe
 
 - Your Claude API key lives only in Vercel. Never paste it into the app's code or share it.
-- Your backend address is public, so in theory someone who finds it could run scans on your account. That's fine while you're testing (your spend limit protects you). Before sharing the app widely, turn on the daily scan limit and consider adding sign-in.
+- Your backend address is public, so someone who finds it could run scans on your Claude account. That's fine while you're testing, because your monthly spend limit caps the cost.
+- Before sharing the app widely, add protection **on the backend**, such as sign-in or a per-person limit checked by the server. The daily scan counter in the app is only a friendly limit for normal users. It runs on the phone, so it can't stop someone who calls your backend directly.
 
 ---
 

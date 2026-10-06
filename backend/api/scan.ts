@@ -117,7 +117,9 @@ export async function POST(request: Request): Promise<Response> {
   if ('error' in photo) return errorResponse(photo.status, photo.error);
 
   try {
-    const message = await getClient().beta.messages.parse({
+    // create() rather than parse(): parse() throws before we can look at a refusal or a cut-off
+    // answer, so we read and check the JSON ourselves below.
+    const message = await getClient().beta.messages.create({
       model: MODEL,
       max_tokens: 16000,
       // Effort controls how long Claude thinks. "medium" balances accuracy and speed;
@@ -142,14 +144,27 @@ export async function POST(request: Request): Promise<Response> {
       console.warn('Claude declined to appraise this photo:', message.stop_details);
       return errorResponse(422, 'Couldn’t check that photo. Please try a different one.');
     }
-    if (!message.parsed_output) {
-      console.error('No parsable answer. stop_reason:', message.stop_reason);
+    const appraisal = readAppraisal(message.content);
+    if (!appraisal) {
+      console.error('No usable answer. stop_reason:', message.stop_reason);
       return errorResponse(502, 'Couldn’t read the appraisal. Please try again.');
     }
 
-    return json(toScanResponse(message.parsed_output));
+    return json(toScanResponse(appraisal));
   } catch (error) {
     return claudeErrorResponse(error);
+  }
+}
+
+/** Finds Claude's JSON answer and checks it has every field we need. */
+function readAppraisal(content: Anthropic.Beta.BetaContentBlock[]): Appraisal | null {
+  const text = content.filter((block) => block.type === 'text').pop()?.text;
+  if (!text) return null;
+  try {
+    const result = Appraisal.safeParse(JSON.parse(text));
+    return result.success ? result.data : null;
+  } catch {
+    return null;
   }
 }
 

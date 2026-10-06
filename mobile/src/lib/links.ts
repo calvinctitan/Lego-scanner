@@ -1,4 +1,5 @@
 import * as WebBrowser from 'expo-web-browser';
+import { Appearance } from 'react-native';
 
 import { brand } from '../theme';
 
@@ -13,7 +14,7 @@ export function brickLinkSearchUrl(figureName: string): string {
 /** Opens a web page in a browser that slides up inside the app. Buying happens on the seller's site. */
 export async function openInAppBrowser(url: string): Promise<void> {
   await WebBrowser.openBrowserAsync(url, {
-    controlsColor: brand.blue,
+    controlsColor: Appearance.getColorScheme() === 'dark' ? '#5B9BFF' : brand.blue,
     dismissButtonStyle: 'done',
     presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
   });

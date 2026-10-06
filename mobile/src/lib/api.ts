@@ -13,6 +13,13 @@ export class ScanCancelledError extends Error {
   }
 }
 
+/** "legara.vercel.app/api/scan/" → "https://legara.vercel.app/api/scan" */
+function scanEndpoint(): string {
+  let base = BACKEND_URL.trim().replace(/\/+$/, '').replace(/\/api\/scan$/i, '');
+  if (!/^https?:\/\//i.test(base)) base = `https://${base}`;
+  return `${base}/api/scan`;
+}
+
 /**
  * Sends the photo to our backend, which asks Claude what the figure is worth.
  * The app never talks to Claude directly, so the API key never ships inside the app.
@@ -30,7 +37,7 @@ export async function analyzePhoto(base64Jpeg: string, signal: AbortSignal): Pro
 
   let response: Response;
   try {
-    response = await fetch(`${BACKEND_URL.replace(/\/+$/, '')}/api/scan`, {
+    response = await fetch(scanEndpoint(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ image: base64Jpeg, mediaType: 'image/jpeg' }),

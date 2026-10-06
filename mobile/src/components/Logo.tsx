@@ -25,7 +25,10 @@ export function Logo({ size = 40 }: { size?: number }) {
           style={{ width: size }}
           contentStyle={[styles.face, { height: size }]}
         >
-          <Text style={[styles.letter, { color: textOn(color), fontSize: size * 0.66, lineHeight: size * 0.95 }]}>
+          <Text
+            style={[styles.letter, { color: textOn(color), fontSize: size * 0.66, lineHeight: size * 0.95 }]}
+            maxFontSizeMultiplier={1}
+          >
             {letter}
           </Text>
         </Brick>
