@@ -1,0 +1,39 @@
+import { StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
+
+import { fonts, textOn } from '../theme';
+import { Brick } from './Brick';
+
+type Props = {
+  label: string;
+  value: string;
+  color: string;
+  big?: boolean;
+  style?: StyleProp<ViewStyle>;
+};
+
+/** A colored brick showing a price, e.g. green "Used  $40–$60". */
+export function PriceBrick({ label, value, color, big, style }: Props) {
+  const fg = textOn(color);
+  // Long ranges like "$1,500–$2,500" get a smaller font so they fit in a half-width brick.
+  const fontSize = big ? 34 : value.length > 11 ? 17 : value.length > 8 ? 20 : 24;
+  return (
+    <Brick color={color} size={big ? 'md' : 'sm'} style={style} contentStyle={[styles.face, big && styles.faceBig]}>
+      <Text style={[styles.label, { color: fg }]}>{label}</Text>
+      <Text
+        style={[styles.value, { color: fg, fontSize, lineHeight: Math.round(fontSize * 1.25) }]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
+      >
+        {value}
+      </Text>
+    </Brick>
+  );
+}
+
+const styles = StyleSheet.create({
+  face: { alignItems: 'center', paddingVertical: 12, paddingHorizontal: 10 },
+  faceBig: { paddingVertical: 16 },
+  label: { fontFamily: fonts.bodyHeavy, fontSize: 13, letterSpacing: 0.6, textTransform: 'uppercase', opacity: 0.9 },
+  value: { fontFamily: fonts.title, marginTop: 4 },
+});
