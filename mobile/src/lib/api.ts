@@ -13,6 +13,14 @@ export class ScanCancelledError extends Error {
   }
 }
 
+/**
+ * False until a backend address is pasted into src/config.ts. Until then the app never sends a
+ * photo anywhere, so scanning can't cost anything; the Scan screen says scanning is off instead.
+ */
+export function scanningIsSetUp(): boolean {
+  return !BACKEND_URL.includes('YOUR-BACKEND');
+}
+
 /** "legara.vercel.app/api/scan/" → "https://legara.vercel.app/api/scan" */
 function scanEndpoint(): string {
   let base = BACKEND_URL.trim().replace(/\/+$/, '').replace(/\/api\/scan$/i, '');
@@ -25,7 +33,7 @@ function scanEndpoint(): string {
  * The app never talks to Claude directly, so the API key never ships inside the app.
  */
 export async function analyzePhoto(base64Jpeg: string, signal: AbortSignal): Promise<ScanResult> {
-  if (BACKEND_URL.includes('YOUR-BACKEND')) {
+  if (!scanningIsSetUp()) {
     throw new Error('The app doesn’t know where your backend is yet. Paste its address into src/config.ts.');
   }
 

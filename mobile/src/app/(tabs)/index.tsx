@@ -15,7 +15,7 @@ import { StackingBricks } from '../../components/StackingBricks';
 import { TextLink } from '../../components/TextLink';
 import { Tile } from '../../components/Tile';
 import { findFigureForScan } from '../../data/figures';
-import { analyzePhoto, ScanCancelledError } from '../../lib/api';
+import { analyzePhoto, ScanCancelledError, scanningIsSetUp } from '../../lib/api';
 import { formatPrice } from '../../lib/format';
 import { usePhotoHeight } from '../../lib/layout';
 import { ebaySearchUrl, ebaySoldUrl, openInAppBrowser } from '../../lib/links';
@@ -69,6 +69,8 @@ export default function ScanScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const photoHeight = usePhotoHeight();
+  // Without a server address the app never sends photos anywhere (so it can't cost anything).
+  const scanningOn = scanningIsSetUp();
   const navigation = useNavigation<BottomTabNavigationProp<Record<string, undefined>>>();
   const scrollRef = useRef<ScrollView>(null);
   const [state, setState] = useState<ScanState>({ kind: 'idle' });
@@ -324,9 +326,21 @@ export default function ScanScreen() {
             <Text style={[styles.subtitle, { color: t.textMuted }]}>
               Stand your figure on a plain background and take a photo.
             </Text>
+            {scanningOn ? null : (
+              <View style={[styles.offNotice, { backgroundColor: t.warningBackground }]}>
+                <Ionicons name="flask-outline" size={20} color={t.warningText} />
+                <View style={styles.offText}>
+                  <Text style={[styles.offTitle, { color: t.warningText }]}>Test version: scanning is off</Text>
+                  <Text style={[styles.offBody, { color: t.warningText }]}>
+                    Scanning needs your own Legará server, and each scan costs a few cents, so it’s switched off and
+                    nothing can be charged. Everything else works, so try the Marketplace.
+                  </Text>
+                </View>
+              </View>
+            )}
             <View style={styles.buttons}>
-              <BrickButton label="Scan a minifigure" icon="camera" color={brand.red} variant="large" disabled={busy} onPress={() => startScan('camera')} />
-              <BrickButton label="Choose from photos" icon="images" color={brand.yellow} disabled={busy} onPress={() => startScan('library')} />
+              <BrickButton label="Scan a minifigure" icon="camera" color={brand.red} variant="large" disabled={busy || !scanningOn} onPress={() => startScan('camera')} />
+              <BrickButton label="Choose from photos" icon="images" color={brand.yellow} disabled={busy || !scanningOn} onPress={() => startScan('library')} />
             </View>
           </Tile>
         ) : null}
@@ -418,6 +432,10 @@ const styles = StyleSheet.create({
   title: { fontFamily: fonts.title, fontSize: 30, lineHeight: 34 },
   subtitle: { fontFamily: fonts.bodySemiBold, fontSize: 16, lineHeight: 22 },
   buttons: { gap: 14, marginTop: 12 },
+  offNotice: { flexDirection: 'row', gap: 10, borderRadius: 12, padding: 12, marginTop: 4 },
+  offText: { flex: 1, gap: 2 },
+  offTitle: { fontFamily: fonts.bodyHeavy, fontSize: 15 },
+  offBody: { fontFamily: fonts.bodySemiBold, fontSize: 14, lineHeight: 19 },
   centered: { alignItems: 'center', gap: 14 },
   photo: { width: '100%', borderRadius: 12 },
   errorPhoto: { width: '100%', height: 140, borderRadius: 12 },
