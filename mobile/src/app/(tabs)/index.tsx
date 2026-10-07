@@ -414,6 +414,7 @@ export default function ScanScreen() {
           onDelete={(scan) => removeFromHistory([scan.id], `Removed ${scan.result.name}`)}
           backgroundScans={state.kind === 'analyzing' ? inProgress - 1 : inProgress}
         />
+        <TextLink icon="information-circle-outline" label="About Legará and legal notices" onPress={() => router.push('/about')} />
       </ScrollView>
       {undoMessage ? (
         <ActionBar message={undoMessage} actionLabel="Undo" onAction={undoRemoval} />

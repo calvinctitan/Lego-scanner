@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#E3E5E8",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.calvinctitan.legara"
     },
     "android": {
       "adaptiveIcon": {

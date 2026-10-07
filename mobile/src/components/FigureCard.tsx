@@ -20,7 +20,8 @@ export function FigureCard({ figure, width, onPress }: Props) {
       onPress={onPress}
       style={{ width }}
       accessibilityRole="button"
-      accessibilityLabel={`${figure.name}, ${figure.theme}, about ${formatPrice(figure.priceUsed)} used`}
+      accessibilityLabel={`${figure.name}, ${figure.theme}${figure.rarity !== 'Common' ? `, ${figure.rarity}` : ''}, about ${formatPrice(figure.priceUsed)} used`}
+      accessibilityHint="Shows where to buy it."
     >
       {({ pressed }) => (
         <Tile pressed={pressed} fill style={styles.card}>

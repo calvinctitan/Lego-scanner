@@ -1,14 +1,16 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { getFigure } from '../data/figures';
+import { getFigure, PRICES_CHECKED } from '../data/figures';
 import { formatPrice, themeAndYear } from '../lib/format';
-import { brickLinkSearchUrl, ebaySearchUrl, ebaySoldUrl, openInAppBrowser } from '../lib/links';
+import { ebaySoldUrl, openInAppBrowser } from '../lib/links';
 import { brand, fonts, useTheme } from '../theme';
 import { Baseplate } from './Baseplate';
-import { BrickButton } from './BrickButton';
+import { BuyOptions } from './BuyOptions';
+import { BuySheet } from './BuySheet';
 import { FigureArt } from './FigureArt';
 import { PriceBrick } from './PriceBrick';
 import { RarityBadge } from './RarityBadge';
@@ -26,6 +28,8 @@ export function FigureDetail({ fullScreen = false }: Props) {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const figure = getFigure(id);
+  // Tapping the big picture opens the same "where to buy" sheet as the Marketplace list.
+  const [buyOpen, setBuyOpen] = useState(false);
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/marketplace'));
 
@@ -58,7 +62,16 @@ export function FigureDetail({ fullScreen = false }: Props) {
           </Tile>
         ) : (
           <>
-            <FigureArt name={figure.name} theme={figure.theme} big />
+            <Pressable
+              onPress={() => setBuyOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel={`Buy ${figure.name}`}
+              accessibilityHint="Shows where to buy it."
+              style={({ pressed }) => pressed && styles.artPressed}
+            >
+              <FigureArt name={figure.name} theme={figure.theme} big />
+            </Pressable>
+            <BuySheet figure={buyOpen ? figure : null} onClose={() => setBuyOpen(false)} />
 
             <Tile style={styles.card}>
               <View style={styles.titleBlock}>
@@ -70,30 +83,15 @@ export function FigureDetail({ fullScreen = false }: Props) {
               <View style={styles.priceBlock}>
                 <PriceBrick label="Typical price, used" value={formatPrice(figure.priceUsed)} color={brand.green} big />
                 <Text style={[styles.caption, { color: t.textMuted }]}>
-                  An estimate of what a complete, used one typically sells for on eBay and BrickLink. Prices change, so check recent sales.
+                  A rough estimate ({PRICES_CHECKED}) of what a complete, used one has sold for on eBay and BrickLink. It isn’t a
+                  live price or an offer to sell, so check recent sales.
                 </Text>
                 <TextLink icon="trending-up" label="Recent sold prices on eBay" onPress={() => openInAppBrowser(ebaySoldUrl(figure.name))} />
               </View>
 
               <Text style={[styles.note, { color: t.text }]}>{figure.note}</Text>
 
-              <View style={styles.actions}>
-                <BrickButton
-                  label="Buy on BrickLink"
-                  icon="cart"
-                  color={brand.blue}
-                  onPress={() => openInAppBrowser(brickLinkSearchUrl(figure.name))}
-                />
-                <BrickButton
-                  label="Buy on eBay"
-                  icon="pricetag"
-                  color={brand.yellow}
-                  onPress={() => openInAppBrowser(ebaySearchUrl(figure.name))}
-                />
-              </View>
-              <Text style={[styles.fine, { color: t.textMuted }]}>
-                BrickLink is a large online marketplace just for LEGO. You’ll finish buying on the seller’s website.
-              </Text>
+              <BuyOptions figure={figure} />
             </Tile>
           </>
         )}
@@ -123,8 +121,7 @@ const styles = StyleSheet.create({
   name: { fontFamily: fonts.title, fontSize: 30, lineHeight: 34 },
   subtitle: { fontFamily: fonts.bodyBold, fontSize: 16 },
   note: { fontFamily: fonts.body, fontSize: 16, lineHeight: 23 },
-  actions: { gap: 12 },
+  artPressed: { transform: [{ translateY: 2 }] },
   priceBlock: { gap: 6 },
   caption: { fontFamily: fonts.bodySemiBold, fontSize: 14, lineHeight: 19 },
-  fine: { fontFamily: fonts.bodySemiBold, fontSize: 14, lineHeight: 19, textAlign: 'center' },
 });

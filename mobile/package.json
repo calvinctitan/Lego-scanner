@@ -38,6 +38,8 @@
   },
   "scripts": {
     "start": "expo start",
+    "tunnel": "expo start --tunnel",
+    "login": "expo login",
     "ios": "expo start --ios",
     "android": "expo start --android",
     "web": "expo start --web",

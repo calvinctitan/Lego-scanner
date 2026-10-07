@@ -1,10 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useScrollToTop } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { FlatList, Platform, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { FlatList, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Baseplate } from '../../../components/Baseplate';
+import { BuySheet } from '../../../components/BuySheet';
 import { FigureCard } from '../../../components/FigureCard';
 import { Logo } from '../../../components/Logo';
 import { SortMenu, type SortKey } from '../../../components/SortMenu';
@@ -33,6 +34,8 @@ export default function MarketplaceScreen() {
   const [query, setQuery] = useState('');
   const [theme, setTheme] = useState(ALL_THEMES);
   const [sort, setSort] = useState<SortKey>('most');
+  // The figure whose "where to buy" sheet is open.
+  const [buying, setBuying] = useState<Figure | null>(null);
 
   // Tapping the Marketplace tab again scrolls back to the top.
   useScrollToTop(listRef);
@@ -67,9 +70,26 @@ export default function MarketplaceScreen() {
         ListEmptyComponent={
           <EmptyState query={query} theme={theme} onClearSearch={() => setQuery('')} onAllThemes={() => setTheme(ALL_THEMES)} />
         }
+        ListFooterComponent={<MarketplaceFooter />}
         renderItem={({ item }) => (
-          <FigureCard figure={item} width={cardWidth} onPress={() => router.push(`/marketplace/${item.id}`)} />
+          <FigureCard
+            figure={item}
+            width={cardWidth}
+            onPress={() => {
+              // The keyboard would otherwise cover the bottom of the sheet.
+              Keyboard.dismiss();
+              setBuying(item);
+            }}
+          />
         )}
+      />
+      <BuySheet
+        figure={buying}
+        onClose={() => setBuying(null)}
+        onMoreInfo={(figure) => {
+          setBuying(null);
+          router.push(`/marketplace/${figure.id}`);
+        }}
       />
     </Baseplate>
   );
@@ -97,7 +117,7 @@ function MarketplaceHeader({ query, onQuery, theme, onTheme, sort, onSort, count
         <Tile style={styles.hero}>
           <Text style={[styles.title, { color: t.text }]}>Marketplace</Text>
           <Text style={[styles.subtitle, { color: t.textMuted }]}>
-            Browse typical prices, then buy on BrickLink or eBay.
+            Tap a figure to buy it on BrickLink or eBay. Legará doesn’t sell anything itself.
           </Text>
 
           {/* The whole box highlights while typing (instead of the browser's square outline). */}
@@ -132,6 +152,19 @@ function MarketplaceHeader({ query, onQuery, theme, onTheme, sort, onSort, count
         </Text>
         <SortMenu value={sort} onChange={onSort} />
       </View>
+    </View>
+  );
+}
+
+/** Under the list: who sells the figures, and the legal notices. */
+function MarketplaceFooter() {
+  const t = useTheme();
+  return (
+    <View style={[styles.padded, styles.footer]}>
+      <Text style={[styles.footerText, { color: t.text }]}>
+        Prices are rough estimates. Buying happens on BrickLink or eBay, from their sellers; Legará isn’t part of it.
+      </Text>
+      <TextLink icon="information-circle-outline" label="About Legará and legal notices" onPress={() => router.push('/about')} />
     </View>
   );
 }
@@ -178,5 +211,7 @@ const styles = StyleSheet.create({
   sortRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   count: { fontFamily: fonts.bodyHeavy, fontSize: 15 },
   empty: { alignItems: 'center', gap: 4, paddingVertical: 24 },
+  footer: { gap: 6, marginTop: 8 },
+  footerText: { fontFamily: fonts.bodySemiBold, fontSize: 14, lineHeight: 19 },
   emptyText: { fontFamily: fonts.bodyBold, fontSize: 16, textAlign: 'center', marginBottom: 4 },
 });

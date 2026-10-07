@@ -79,8 +79,8 @@ export function ResultCard(props: Props) {
       </View>
       <View style={styles.explain}>
         <Text style={[styles.caption, { color: t.textMuted }]}>
-          Used: complete, with its usual accessories. New: never opened. An AI estimate of typical eBay and BrickLink
-          sale prices, made {formatDate(estimatedAt)}.
+          Used: complete, with its usual accessories. New: never opened. An AI estimate made {formatDate(estimatedAt)} from
+          past eBay and BrickLink sales, not live prices.
         </Text>
         <TextLink icon="trending-up" label="Recent sold prices on eBay" onPress={props.onSeeSoldPrices} />
       </View>

@@ -77,6 +77,9 @@ function slugify(text: string): string {
 
 const seen = new Map<string, number>();
 
+/** When the prices in figures.json were last checked. Update this when you change them. */
+export const PRICES_CHECKED = 'October 2026';
+
 export const FIGURES: Figure[] = rawFigures.map((f) => {
   const base = slugify(f.name) || 'figure';
   const count = (seen.get(base) ?? 0) + 1;

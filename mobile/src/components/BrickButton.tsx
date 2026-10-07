@@ -17,10 +17,12 @@ type Props = {
   variant?: 'large' | 'regular' | 'small';
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
+  /** Extra VoiceOver help, like "Opens the eBay website." */
+  accessibilityHint?: string;
 };
 
 /** A button that looks like a brick and presses down when tapped. Text is dark on light colors like yellow. */
-export function BrickButton({ label, color, onPress, icon, variant = 'regular', disabled, style }: Props) {
+export function BrickButton({ label, color, onPress, icon, variant = 'regular', disabled, style, accessibilityHint }: Props) {
   const fg = textOn(color);
   const v = VARIANTS[variant];
 
@@ -33,6 +35,7 @@ export function BrickButton({ label, color, onPress, icon, variant = 'regular', 
       disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled }}
       style={[disabled && styles.disabled, style]}
     >
