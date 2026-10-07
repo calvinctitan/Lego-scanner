@@ -90,7 +90,7 @@ export function ResultCard(props: Props) {
       <View style={styles.actions}>
         <View style={styles.withCaption}>
           <BrickButton label="Find it for sale" icon="pricetag" color={brand.yellow} onPress={props.onFindForSale} />
-          <Text style={[styles.buttonCaption, { color: t.textMuted }]}>Searches eBay for this figure</Text>
+          <Text style={[styles.buttonCaption, { color: t.textMuted }]}>Searches eBay for this figure. You’d buy on eBay, not in Legará.</Text>
         </View>
         <BrickButton label="Scan another" icon="camera" color={brand.red} onPress={props.onScanAnother} />
       </View>

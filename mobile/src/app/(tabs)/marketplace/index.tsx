@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router, useScrollToTop } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
+import { router, useFocusEffect, useScrollToTop } from 'expo-router';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -39,6 +39,9 @@ export default function MarketplaceScreen() {
 
   // Tapping the Marketplace tab again scrolls back to the top.
   useScrollToTop(listRef);
+
+  // Leaving the Marketplace (for example with the browser's Back button on the web) closes the sheet.
+  useFocusEffect(useCallback(() => () => setBuying(null), []));
 
   const figures = useMemo(() => filterAndSort(FIGURES, query, theme, sort), [query, theme, sort]);
   const cardWidth = Math.floor((width - PADDING * 2 - GAP) / 2);
@@ -160,7 +163,7 @@ function MarketplaceHeader({ query, onQuery, theme, onTheme, sort, onSort, count
 function MarketplaceFooter() {
   const t = useTheme();
   return (
-    <View style={[styles.padded, styles.footer]}>
+    <View style={[styles.footer, { backgroundColor: t.card }]}>
       <Text style={[styles.footerText, { color: t.text }]}>
         Prices are rough estimates. Buying happens on BrickLink or eBay, from their sellers; Legará isn’t part of it.
       </Text>
@@ -211,7 +214,7 @@ const styles = StyleSheet.create({
   sortRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   count: { fontFamily: fonts.bodyHeavy, fontSize: 15 },
   empty: { alignItems: 'center', gap: 4, paddingVertical: 24 },
-  footer: { gap: 6, marginTop: 8 },
+  footer: { gap: 6, marginTop: 8, marginHorizontal: PADDING, borderRadius: 14, padding: 12 },
   footerText: { fontFamily: fonts.bodySemiBold, fontSize: 14, lineHeight: 19 },
   emptyText: { fontFamily: fonts.bodyBold, fontSize: 16, textAlign: 'center', marginBottom: 4 },
 });

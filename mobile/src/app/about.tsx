@@ -55,8 +55,8 @@ export default function AboutScreen() {
 
           <Section title="Privacy">
             Your scans and their photos are saved only on this phone. When you scan, the photo is sent to Claude (Anthropic’s
-            AI) to estimate the price, and Anthropic’s privacy policy applies to it. Legará itself doesn’t keep or share it
-            anywhere else, and has no accounts, ads or tracking. Websites you open from the app have their own privacy rules.
+            AI) to estimate the price. Legará itself doesn’t keep or share it anywhere else, and has no accounts, ads or
+            tracking. Websites you open from the app have their own privacy rules.
           </Section>
 
           <Section title="Trademarks">

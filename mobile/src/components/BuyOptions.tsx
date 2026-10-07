@@ -23,7 +23,8 @@ export function BuyOptions({ figure }: { figure: Figure }) {
     opening.current = true;
     openInAppBrowser(url)
       .catch(() => {})
-      .finally(() => (opening.current = false));
+      // On the web the store opens instantly, so wait a moment before allowing another tap.
+      .finally(() => setTimeout(() => (opening.current = false), 800));
   };
 
   return (

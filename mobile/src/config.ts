@@ -10,7 +10,7 @@
 //
 //   EXPO_PUBLIC_BACKEND_URL=https://your-server.vercel.app
 //
-// .env.local is never uploaded to GitHub. Restart `npx expo start` after creating or changing it.
+// .env.local is never uploaded to GitHub. After creating or changing it, restart with `npx expo start --clear`.
 // (Your Claude API key itself lives only on the server, never in the app.)
 // ─────────────────────────────────────────────────────────────────────────────
 export const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://YOUR-BACKEND.vercel.app';

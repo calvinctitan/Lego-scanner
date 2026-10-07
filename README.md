@@ -18,7 +18,7 @@ There are two free ways. Neither one publishes anything.
 
 Claude made a private web version of Legará for you on claude.ai. Only you can open it.
 
-1. On your iPhone, open the Legará preview link from our chat. You can also find it in the **Claude** app under **Artifacts** → **Legará**, or in Safari while you're signed in to claude.ai.
+1. On your iPhone, open the Legará preview link from our chat. You can also find it in the **Claude** app under **Artifacts** (if you see two named Legará, use the newer one: it has a **Buy** sheet and an **About** page), or in Safari while you're signed in to claude.ai.
 2. Scanning works here **without any extra cost**: it uses your own Claude plan's normal usage, not an API bill. The first time you scan, Claude asks for your OK.
 3. Optional: in Safari, tap **Share** → **Add to Home Screen** to get an icon. You may need to sign in to Claude once more inside it.
 
@@ -109,6 +109,8 @@ Skip this whole part if you want the test to stay free. Scanning in the real app
 
 ## Step 2: Put the server online (optional, for scanning)
 
+If the app is running, stop it with <kbd>Ctrl</kbd> + <kbd>C</kbd>. If your terminal is in the `mobile` folder, run `cd ..` first, so you're in the project folder (the one that has `backend` and `mobile` in it).
+
 These commands install the server's building blocks, then upload it to Vercel.
 
 ```bash
@@ -125,7 +127,7 @@ It asks a few questions. Answer like this:
 - **Set up and deploy?** → `Y`
 - **Which scope?** → pick your account (press Enter)
 - **Link to existing project?** → `N`
-- **Project name?** → `legara-backend` (or anything you like)
+- **Project name?** → something hard to guess, like `legara-` plus your initials and 4 random digits (for example `legara-cc4817`). Your server's address is built from this name, so a guessable name makes it easier for strangers to find.
 - **In which directory is your code located?** → just press Enter (`./`)
 - **Want to modify these settings?** → `N`
 
@@ -140,11 +142,11 @@ Finally, publish the real ("production") version, which picks up the key:
 npx vercel --prod
 ```
 
-**Find your backend's address:** open <https://vercel.com/dashboard>, click your project, and look under **Domains**. It looks like `https://legara-backend.vercel.app` (sometimes with a few extra letters, if that name was taken).
+**Find your backend's address:** open <https://vercel.com/dashboard>, click your project, and look under **Domains**. It looks like `https://YOUR-PROJECT.vercel.app`, with your project name in place of `YOUR-PROJECT`.
 
 **Test it:** open this in any browser, using your own address:
 ```
-https://legara-backend.vercel.app/api/scan
+https://YOUR-PROJECT.vercel.app/api/scan
 ```
 You should see `"ok": true` and `"apiKeyConfigured": true`. 🎉
 
@@ -154,15 +156,21 @@ You should see `"ok": true` and `"apiKeyConfigured": true`. 🎉
 
 ## Step 3: Tell the app where your server is
 
-Don't type the address into the code: this project is on GitHub, and anyone who sees the address could run scans on your Claude account. Instead:
+Don't type the address into the code: this project is on GitHub, and anyone who sees the address could run scans on your Claude account. Instead, put it in a private file called `.env.local` that's never uploaded:
 
-1. In the `mobile` folder, create a new text file named exactly `.env.local` (with the dot at the start).
-2. Put this one line in it, using your address from Step 2:
+1. Go from the `backend` folder (where Step 2 left you) to the `mobile` folder:
+   ```bash
+   cd ../mobile
    ```
-   EXPO_PUBLIC_BACKEND_URL=https://legara-backend.vercel.app
+2. Create the file with this one command, using your own address from Step 2. Type it exactly, with no space before the `>`. It works in both Command Prompt and the Mac Terminal:
+   ```bash
+   echo EXPO_PUBLIC_BACKEND_URL=https://YOUR-PROJECT.vercel.app> .env.local
    ```
-   Keep the `https://` at the start and don't add `/api/scan` at the end.
-3. Save it, then restart the app: stop `npx expo start` with <kbd>Ctrl</kbd> + <kbd>C</kbd> and run it again (from the `mobile` folder).
+   Keep the `https://` at the start and don't add `/api/scan` at the end. (Don't make this file in Notepad or TextEdit: they tend to save it as `.env.local.txt`, which the app ignores.)
+3. Start the app again. The `--clear` part makes it pick up the new file:
+   ```bash
+   npx expo start --clear
+   ```
 
 `.env.local` is never uploaded to GitHub. The **"scanning is off"** notice disappears and the scan buttons work.
 
@@ -224,7 +232,7 @@ The app quietly counts how many scans you do each day, saved only on your phone.
 | "Test version: scanning is off" | That's normal for the free test. To scan for free, use the Legará preview (Way 1). To scan in the real app, do the optional Steps 2 and 3. |
 | "You need to be signed in to Expo Go and Expo CLI to open your project" (or "…these accounts need to match") | Run `npx expo login` on the computer, sign in to Expo Go on the iPhone (account icon, top-right) with the **same** account, tap **Try Again**, and restart `npx expo start` if needed. |
 | Expo Go says the project is incompatible | Update Expo Go from the App Store. This project uses Expo SDK 57. If Expo Go is up to date and still says this, Expo has moved on to a newer SDK and the project needs upgrading: ask Claude to upgrade it. |
-| Scanning stays off after adding `.env.local` | Check the file is in the `mobile` folder, is named exactly `.env.local`, and the line starts with `EXPO_PUBLIC_BACKEND_URL=`. Then stop and restart `npx expo start`. |
+| Scanning stays off after adding `.env.local` | In the `mobile` folder, list the files with `dir /a` (Windows) or `ls -a` (Mac). The file must be named exactly `.env.local` (not `.env.local.txt`), and its line must start with `EXPO_PUBLIC_BACKEND_URL=`. Then stop the app and start it with `npx expo start --clear`. |
 | "Couldn't reach the Legará server" | Check the address in `mobile/.env.local`. Open `https://YOUR-ADDRESS/api/scan` in Safari on your phone; it should say `"ok": true`. |
 | "The server isn't set up yet (missing Claude API key)" | Run the `npx vercel env add …` command from Step 2, then `npx vercel --prod` again (key changes only apply after redeploying). |
 | "The server's Claude API key isn't working" | Make a new key in the Claude Console. Then, in the `backend` folder, run `npx vercel env rm ANTHROPIC_API_KEY production`, add the new key with `npx vercel env add ANTHROPIC_API_KEY production`, and run `npx vercel --prod`. |

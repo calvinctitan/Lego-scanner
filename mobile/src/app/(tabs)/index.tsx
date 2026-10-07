@@ -146,6 +146,11 @@ export default function ScanScreen() {
   }
 
   async function startScan(source: PhotoSource) {
+    // With scanning off, go back to the start, where the notice explains why.
+    if (!scanningOn) {
+      goHome();
+      return;
+    }
     if (preparing.current) return;
     finishRemoval();
     preparing.current = true;

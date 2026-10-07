@@ -14,8 +14,8 @@ export class ScanCancelledError extends Error {
 }
 
 /**
- * False until a backend address is pasted into src/config.ts. Until then the app never sends a
- * photo anywhere, so scanning can't cost anything; the Scan screen says scanning is off instead.
+ * False until a server address is set in mobile/.env.local (see src/config.ts). Until then the app
+ * never sends a photo anywhere, so scanning can't cost anything; the Scan screen says scanning is off.
  */
 export function scanningIsSetUp(): boolean {
   return !BACKEND_URL.includes('YOUR-BACKEND');
@@ -34,7 +34,7 @@ function scanEndpoint(): string {
  */
 export async function analyzePhoto(base64Jpeg: string, signal: AbortSignal): Promise<ScanResult> {
   if (!scanningIsSetUp()) {
-    throw new Error('The app doesn’t know where your backend is yet. Paste its address into src/config.ts.');
+    throw new Error('Scanning is off in this test version. To turn it on, follow README Step 3 (mobile/.env.local).');
   }
 
   // One controller for both the Stop button and the time limit.
