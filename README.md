@@ -1,5 +1,7 @@
 # Legará
 
+> An app that scan Lego mini figures and finds its value. In addition, users would be able to find figures they want to buy on the app. A fun project made by a student that uses Claude code
+
 Point your iPhone at a LEGO minifigure and Legará tells you what it's worth. There's also a **Marketplace** tab where you can browse typical prices and jump to BrickLink or eBay to buy.
 
 This guide assumes you've never built an app before. Follow the steps in order, and copy the commands exactly.
