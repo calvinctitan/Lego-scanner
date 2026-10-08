@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ActionBar } from '../../components/ActionBar';
 import { Baseplate } from '../../components/Baseplate';
 import { BrickButton } from '../../components/BrickButton';
+import { FanNotice } from '../../components/FanNotice';
 import { Logo } from '../../components/Logo';
 import { ResultCard } from '../../components/ResultCard';
 import { ScanHistory } from '../../components/ScanHistory';
@@ -323,6 +324,7 @@ export default function ScanScreen() {
       >
         <View style={styles.logo}>
           <Logo size={42} />
+          <FanNotice />
         </View>
 
         {state.kind === 'idle' ? (

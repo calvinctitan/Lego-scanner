@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Baseplate } from '../../../components/Baseplate';
 import { BuySheet } from '../../../components/BuySheet';
+import { FanNotice } from '../../../components/FanNotice';
 import { FigureCard } from '../../../components/FigureCard';
 import { Logo } from '../../../components/Logo';
 import { SortMenu, type SortKey } from '../../../components/SortMenu';
@@ -116,6 +117,7 @@ function MarketplaceHeader({ query, onQuery, theme, onTheme, sort, onSort, count
       <View style={styles.padded}>
         <View style={styles.logo}>
           <Logo size={34} />
+          <FanNotice />
         </View>
         <Tile style={styles.hero}>
           <Text style={[styles.title, { color: t.text }]}>Marketplace</Text>

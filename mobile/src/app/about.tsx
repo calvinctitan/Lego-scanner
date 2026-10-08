@@ -38,8 +38,8 @@ export default function AboutScreen() {
           </Text>
 
           <Section title="What Legará is">
-            Legará is an independent test app made by a fan. It is not made, sponsored or endorsed by the LEGO Group,
-            BrickLink, eBay or any other company named in it.
+            Legará is an unofficial, independent test app made by a fan. It is not made, sponsored or endorsed by the LEGO
+            Group, BrickLink, eBay or any other company named in it.
           </Section>
 
           <Section title="Buying">
@@ -54,22 +54,26 @@ export default function AboutScreen() {
           </Section>
 
           <Section title="Privacy">
-            Your scans and their photos are saved only on this phone. When you scan, the photo is sent to Claude (Anthropic’s
-            AI) to estimate the price. Legará itself doesn’t keep or share it anywhere else, and has no accounts, ads or
-            tracking. Websites you open from the app have their own privacy rules.
+            Legará has no accounts, ads, cookies or tracking, and doesn’t collect your personal information. Your scans and
+            their photos are saved only on your device (on the website, only in this browser). When scanning is switched on,
+            the photo is sent to Claude (Anthropic’s AI) to estimate the price; Legará itself doesn’t keep or share it
+            anywhere else. On the public test website scanning is off, so no photos are sent anywhere. The website is hosted
+            by GitHub Pages, which logs visitors’ IP addresses for security. Websites you open from Legará have their own
+            privacy rules.
           </Section>
 
           <Section title="Trademarks">
-            LEGO® is a trademark of the LEGO Group of companies, which does not sponsor, authorize or endorse this app. Star
+            LEGO® is a trademark of the LEGO Group of companies, which does not sponsor, authorize or endorse Legará. Star
             Wars, Harry Potter, Marvel, DC, The Lord of the Rings, NINJAGO, BrickLink, eBay, Claude and all character and
-            product names are trademarks of their owners, who don’t sponsor or endorse this app. Names are used only to
+            product names are trademarks of their owners, who don’t sponsor or endorse Legará. Names are used only to
             identify the figures and websites described.
           </Section>
 
           <Section title="Credits">
             Fonts: Lilita One, copyright 2011 Juan Montoreano, and Nunito, copyright 2014 The Nunito Project Authors, both
             under the SIL Open Font License 1.1. Icons: Ionicons by Ionic (MIT License), via @expo/vector-icons (MIT License).
-            Built with Expo and React Native (MIT License). The app icon and brick artwork are original to Legará.
+            Built with Expo and React Native (MIT License). The app icon and brick artwork are original to Legará. On the
+            website, the full license texts of all the open-source code it contains are in third-party-licenses.txt.
           </Section>
         </Tile>
       </ScrollView>

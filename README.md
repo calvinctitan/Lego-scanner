@@ -2,9 +2,21 @@
 
 > An app that scan Lego mini figures and finds its value. In addition, users would be able to find figures they want to buy on the app. A fun project made by a student that uses Claude code
 
-Point your iPhone at a LEGO® minifigure and Legará estimates what it's worth. There's also a **Marketplace** tab: tap a figure and it sends you to BrickLink or eBay to buy it. The buying happens on their websites. Legará doesn't sell anything or take payments.
+> **Unofficial fan project.** Legará is not made, sponsored or endorsed by the LEGO Group. LEGO® is a trademark of the LEGO Group of companies, which does not sponsor, authorize or endorse this project.
 
-**This is a private test version.** It isn't on the App Store, and out of the box it costs nothing: scanning stays switched off until you deliberately set up your own server (which costs a few cents per scan).
+## ▶ Try the test version: <https://calvinctitan.github.io/Lego-scanner/>
+
+<a href="https://calvinctitan.github.io/Lego-scanner/"><img src="docs/test-version-qr.png" width="180" alt="QR code that opens the Legará test version"></a>
+
+**On your phone:** point the camera at the QR code, or tap the link. It's free, there's nothing to install and no sign-up, and it works in any phone or computer web browser. On an iPhone, tap **Share** → **Add to Home Screen** to keep it like an app.
+
+**What works:** the **Marketplace**. Browse figures with typical prices, then tap one to buy it on BrickLink or eBay. The buying happens on their websites; Legará doesn't sell anything or take payments. **Scanning is switched off** on this public test website, so it costs nothing and no photos are sent anywhere.
+
+---
+
+Point your iPhone at a LEGO® minifigure and Legará estimates what it's worth. There's also a **Marketplace** tab: tap a figure and it sends you to BrickLink or eBay to buy it.
+
+**This is a test version.** It isn't on the App Store, and out of the box it costs nothing: scanning stays switched off until you deliberately set up your own server (which costs a few cents per scan).
 
 This guide assumes you've never built an app before. Follow the steps in order, and copy the commands exactly.
 
@@ -12,7 +24,7 @@ This guide assumes you've never built an app before. Follow the steps in order, 
 
 ## Try it on your iPhone today (free)
 
-There are two free ways. Neither one publishes anything.
+Anyone can use the public test website above. If this is your project, there are two more free ways, and neither one publishes anything.
 
 ### Way 1: the Legará preview (no computer needed, scanning works)
 
@@ -178,6 +190,23 @@ Don't type the address into the code: this project is on GitHub, and anyone who 
 
 ---
 
+## The test website (for the project owner)
+
+The test website is built from this repository and published free on **GitHub Pages** by the workflow in `.github/workflows/publish-test-version.yml`. Every time something lands on the `main` branch, it rebuilds and republishes the site by itself (about 3 minutes).
+
+**One-time setup (only you can do this):**
+
+1. On GitHub, open the repository → **Settings** → **Pages** (in the left menu).
+2. Under **Build and deployment** → **Source**, choose **GitHub Actions**. It saves by itself.
+3. Open the **Actions** tab → **Publish test version** (on the left) → **Run workflow** → the green **Run workflow** button. When it shows a green tick, the site is live at <https://calvinctitan.github.io/Lego-scanner/>.
+4. Make the link show at the top right of the repository page: on the repository's main page, click the gear next to **About**, tick **Use your GitHub Pages website**, and click **Save changes**.
+
+**To take the website offline** at any time: **Settings** → **Pages** → the **⋯** menu next to "Your site is live at" → **Unpublish site**. Nothing is lost, and the next publish brings it back.
+
+The website never scans: no server address is given to it, so it can't cost anything. Don't add `EXPO_PUBLIC_BACKEND_URL` to the workflow or to the repository's secrets, or anyone could run paid scans.
+
+---
+
 ## Using the app
 
 - **Scan tab** (when scanning is on): tap **Scan a minifigure** to take a photo (stand the figure on a plain background and fill most of the frame), or **Choose from photos**. After a few seconds you'll see the figure's name, theme, year, rarity, used and new price ranges, and a tip about what affects its value. **Recent sold prices on eBay** shows what that figure actually sold for, and **Find it for sale** opens an eBay search. Your past scans are saved under **My scans**; tap one to see it again, or swipe it to the left to delete it.
@@ -244,12 +273,13 @@ The app quietly counts how many scans you do each day, saved only on your phone.
 
 ## Keeping it private, safe and legal
 
-- **This GitHub repository is public**, so anyone can read the code. To keep the project unpublished, make it private: on GitHub open the repository → **Settings** → **General** → **Danger Zone** → **Change visibility** → **Private** (free).
+- **This GitHub repository and the test website are public.** On GitHub's free plan the website only works while the repository is public, so don't make it private. To take the website offline instead, use **Unpublish site** (see [The test website](#the-test-website-for-the-project-owner)).
+- **The web address contains "Lego"** (from the repository name). LEGO asks fans not to put its name in web addresses. That's low risk for a free, clearly labelled fan demo, but if you'd like to rename the repository (for example to `legara`), do it before you share the link or QR code widely: GitHub doesn't forward the old website address after a rename.
 - **Never put your Claude API key or your server address in the code.** The key lives only in Vercel, and the address goes in `mobile/.env.local`, which is never uploaded.
 - **Inside the app**, *About Legará and legal notices* (at the bottom of both tabs) says that Legará isn't made or endorsed by the LEGO Group, BrickLink or eBay, that buying happens on their websites, that prices are estimates, what happens to your photos, and who made the fonts and icons. The app icon and brick artwork are original (drawn by `mobile/scripts/make-icons.py`), and the Marketplace uses no photos or logos from other websites.
 - **The daily scan counter** in the app is only a friendly limit for normal users. It runs on the phone, so it can't stop someone who calls your server directly. That's why the address stays private and the rate limit and spend limit are there.
 
-**Before you ever publish it on the App Store** (not needed for testing), these must change:
+**Before you promote the website widely, add anything paid, or publish on the App Store,** these must change:
 
 1. **The name and look.** "Legará" is very close to LEGO, and the icon and buttons use LEGO-style studded bricks in LEGO's colors. A public app needs its own name and a design without studs, so nobody thinks the LEGO Group made it.
 2. **A privacy policy** (a web page) and a clear "your photo will be sent to Anthropic's Claude" question before the first scan. Also rules for children under 13 and teens.
@@ -278,6 +308,10 @@ mobile/
   src/theme/             Colors, fonts, light and dark mode
   assets/                App icon and splash image (original artwork)
   scripts/make-icons.py  Draws the app icon and splash image
+  public/                Home-screen icons and settings for the test website
+  scripts/finish-website.mjs, scripts/third-party-licenses.mjs   Used when building the test website
+.github/workflows/publish-test-version.yml   Builds and publishes the test website
+docs/test-version-qr.png  The QR code at the top of this page
 ```
 
 **Behind the scenes:** the server uses Claude Opus 5.5 with *structured outputs*, which forces Claude's answer into the exact JSON shape the app expects. If one of Claude's safety checks ever wrongly declines a photo, the backend automatically retries on Anthropic's recommended fallback model.

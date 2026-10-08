@@ -1,0 +1,22 @@
+{
+  "name": "Legará (test version)",
+  "short_name": "Legará",
+  "description": "Unofficial fan-made test version: look up what LEGO® minifigures are worth. Not made or endorsed by the LEGO Group.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#E3E5E8",
+  "theme_color": "#0055BF",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
