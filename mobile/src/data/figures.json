@@ -1,0 +1,250 @@
+[
+  {
+    "name": "Cloud City Boba Fett",
+    "theme": "Star Wars",
+    "year": 2003,
+    "priceUsed": 1800,
+    "rarity": "Very rare",
+    "note": "Only came in the 2003 Cloud City set, and its printed arms and legs make it one of the most valuable minifigures ever."
+  },
+  {
+    "name": "Chrome Gold C-3PO",
+    "theme": "Star Wars",
+    "year": 2007,
+    "priceUsed": 650,
+    "rarity": "Very rare",
+    "note": "Hidden in 10,000 random sets for Star Wars' 30th anniversary; the chrome scratches easily, so flawless ones sell for much more."
+  },
+  {
+    "name": "White Boba Fett",
+    "theme": "Star Wars",
+    "year": 2010,
+    "priceUsed": 300,
+    "rarity": "Rare",
+    "note": "A 2010 promotional giveaway made to look like an early prototype; still-sealed bags fetch the highest prices."
+  },
+  {
+    "name": "Darth Vader",
+    "theme": "Star Wars",
+    "year": 2015,
+    "priceUsed": 8,
+    "rarity": "Common",
+    "note": "Appears in dozens of sets, so most versions are cheap, but early ones with special printing are worth more."
+  },
+  {
+    "name": "Stormtrooper",
+    "theme": "Star Wars",
+    "year": 2019,
+    "priceUsed": 4,
+    "rarity": "Common",
+    "note": "One of the most produced minifigures ever, so prices stay low unless it's a rare variant."
+  },
+  {
+    "name": "Luke Skywalker (Tatooine)",
+    "theme": "Star Wars",
+    "year": 2020,
+    "priceUsed": 5,
+    "rarity": "Common",
+    "note": "Included in many sets; having his lightsaber and hair piece makes a small difference."
+  },
+  {
+    "name": "Harry Potter (Hogwarts Robes)",
+    "theme": "Harry Potter",
+    "year": 2018,
+    "priceUsed": 4,
+    "rarity": "Common",
+    "note": "Comes in lots of current sets, so it's easy to find and inexpensive."
+  },
+  {
+    "name": "Hermione Granger",
+    "theme": "Harry Potter",
+    "year": 2018,
+    "priceUsed": 4,
+    "rarity": "Common",
+    "note": "A common figure; complete ones with her wand sell a little higher."
+  },
+  {
+    "name": "Rubeus Hagrid",
+    "theme": "Harry Potter",
+    "year": 2018,
+    "priceUsed": 12,
+    "rarity": "Uncommon",
+    "note": "His big-figure body only appears in a few sets, which keeps his price above regular figures."
+  },
+  {
+    "name": "Professor Quirrell",
+    "theme": "Harry Potter",
+    "year": 2001,
+    "priceUsed": 25,
+    "rarity": "Uncommon",
+    "note": "The original 2001 version has Voldemort's face printed on the back of his head, which collectors love."
+  },
+  {
+    "name": "Viktor Krum",
+    "theme": "Harry Potter",
+    "year": 2005,
+    "priceUsed": 45,
+    "rarity": "Rare",
+    "note": "Only came with the 2005 Durmstrang Ship set, so he's hard to find today."
+  },
+  {
+    "name": "Iron Man",
+    "theme": "Marvel",
+    "year": 2019,
+    "priceUsed": 6,
+    "rarity": "Common",
+    "note": "There are many armor versions; newer common ones are cheap while early ones cost more."
+  },
+  {
+    "name": "Spider-Man",
+    "theme": "Marvel",
+    "year": 2019,
+    "priceUsed": 4,
+    "rarity": "Common",
+    "note": "Very common in recent sets; condition of the face and leg printing matters most."
+  },
+  {
+    "name": "Phoenix (Comic-Con Exclusive)",
+    "theme": "Marvel",
+    "year": 2013,
+    "priceUsed": 400,
+    "rarity": "Very rare",
+    "note": "Given away in small numbers at San Diego Comic-Con, so sealed ones are especially valuable."
+  },
+  {
+    "name": "Batman",
+    "theme": "DC",
+    "year": 2016,
+    "priceUsed": 4,
+    "rarity": "Common",
+    "note": "Batman comes in many sets, so most versions are inexpensive."
+  },
+  {
+    "name": "Wonder Woman",
+    "theme": "DC",
+    "year": 2017,
+    "priceUsed": 5,
+    "rarity": "Common",
+    "note": "A common figure; including her lasso and tiara adds a little value."
+  },
+  {
+    "name": "Bizarro (Comic-Con Exclusive)",
+    "theme": "DC",
+    "year": 2012,
+    "priceUsed": 250,
+    "rarity": "Rare",
+    "note": "A San Diego Comic-Con giveaway; the original packaging and card matter a lot for value."
+  },
+  {
+    "name": "Kai",
+    "theme": "Ninjago",
+    "year": 2011,
+    "priceUsed": 6,
+    "rarity": "Common",
+    "note": "The original red ninja was re-released many times, which keeps prices low."
+  },
+  {
+    "name": "Lloyd",
+    "theme": "Ninjago",
+    "year": 2019,
+    "priceUsed": 4,
+    "rarity": "Common",
+    "note": "The green ninja shows up in lots of sets and is easy to find."
+  },
+  {
+    "name": "Golden Ninja Lloyd",
+    "theme": "Ninjago",
+    "year": 2013,
+    "priceUsed": 15,
+    "rarity": "Uncommon",
+    "note": "His shiny gold printing wears off easily, so clean ones are worth more."
+  },
+  {
+    "name": "Police Officer",
+    "theme": "City",
+    "year": 2021,
+    "priceUsed": 3,
+    "rarity": "Common",
+    "note": "City figures are made in huge numbers, so they're usually just a few dollars."
+  },
+  {
+    "name": "Firefighter",
+    "theme": "City",
+    "year": 2022,
+    "priceUsed": 3,
+    "rarity": "Common",
+    "note": "Common and easy to find; a matching helmet and air tank help a little."
+  },
+  {
+    "name": "Mr. Gold",
+    "theme": "Collectibles",
+    "year": 2013,
+    "priceUsed": 900,
+    "rarity": "Very rare",
+    "note": "Only 5,000 were hidden in Series 10 blind bags, and the value jumps if it still has its numbered certificate."
+  },
+  {
+    "name": "Lady Liberty",
+    "theme": "Collectibles",
+    "year": 2012,
+    "priceUsed": 15,
+    "rarity": "Uncommon",
+    "note": "A popular Series 6 figure; she needs her torch and tablet to be complete."
+  },
+  {
+    "name": "Banana Guy",
+    "theme": "Collectibles",
+    "year": 2016,
+    "priceUsed": 5,
+    "rarity": "Common",
+    "note": "A fan favorite from Series 16, but plenty were made so it stays affordable."
+  },
+  {
+    "name": "Gandalf the Grey",
+    "theme": "Lord of the Rings",
+    "year": 2012,
+    "priceUsed": 12,
+    "rarity": "Uncommon",
+    "note": "The 2012 version is worth more than the newer 2023 one from Rivendell; his hat and staff are a must."
+  },
+  {
+    "name": "Frodo Baggins",
+    "theme": "Lord of the Rings",
+    "year": 2012,
+    "priceUsed": 8,
+    "rarity": "Common",
+    "note": "Appeared in several sets; versions with the One Ring and Sting are worth a bit more."
+  },
+  {
+    "name": "Witch-king of Angmar",
+    "theme": "Lord of the Rings",
+    "year": 2012,
+    "priceUsed": 35,
+    "rarity": "Uncommon",
+    "note": "Only came in a couple of sets, and his crown and sword are often missing."
+  },
+  {
+    "name": "Gollum",
+    "theme": "Lord of the Rings",
+    "year": 2012,
+    "priceUsed": 12,
+    "rarity": "Uncommon",
+    "note": "His special small body makes him stand out; the 2012 version and the newer 2024 one sell for different prices."
+  },
+  {
+    "name": "Red Classic Spaceman",
+    "theme": "Classic Space",
+    "year": 1978,
+    "priceUsed": 10,
+    "rarity": "Common",
+    "note": "Lots were made, but a crack-free helmet and a crisp space logo on the chest raise the price."
+  },
+  {
+    "name": "Blue Classic Spaceman",
+    "theme": "Classic Space",
+    "year": 1984,
+    "priceUsed": 15,
+    "rarity": "Uncommon",
+    "note": "Fewer were made than the red and white ones, and worn chest logos lower the value."
+  }
+]

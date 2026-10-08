@@ -1,0 +1,105 @@
+# Publishes the test version of Legará (the web version of the mobile/ app) as a free website on GitHub Pages:
+#   https://calvinctitan.github.io/Lego-scanner/
+#
+# It runs by itself every time something lands on the main branch.
+# To run it by hand: Actions tab -> "Publish test version" -> Run workflow (branch: main).
+# On pull requests it only checks that the website still builds; it never publishes from a pull request.
+#
+# One-time setup that only the repository owner can do:
+#   Settings -> Pages -> Build and deployment -> Source: GitHub Actions
+# Until then this workflow still builds the site, skips publishing, and leaves a yellow note saying what to click.
+#
+# Scanning stays off on this website: no server address is given here (never add EXPO_PUBLIC_BACKEND_URL),
+# so no photo is ever sent anywhere and nothing can cost money.
+name: Publish test version
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
+    outputs:
+      pages-on: ${{ steps.pages.outcome == 'success' }}
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v7
+
+      - name: Check that GitHub Pages is turned on
+        id: pages
+        uses: actions/configure-pages@v6
+        continue-on-error: true
+
+      - name: Explain how to turn on GitHub Pages
+        if: steps.pages.outcome != 'success' && github.event_name != 'pull_request'
+        run: |
+          echo "::warning title=GitHub Pages is not turned on yet::Nothing was published. Owner: open Settings > Pages and set Source to GitHub Actions. Then Actions tab > Publish test version > Run workflow."
+          {
+            echo "## The website was built but not published"
+            echo "GitHub Pages is not turned on for this repository yet. The owner can fix it in one minute:"
+            echo "1. Open **Settings** > **Pages**."
+            echo "2. Under **Build and deployment** > **Source**, choose **GitHub Actions**."
+            echo "3. Open the **Actions** tab > **Publish test version** > **Run workflow** (branch: main)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Install Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install the app's packages
+        working-directory: mobile
+        run: npm ci
+
+      - name: Build the website
+        working-directory: mobile
+        env:
+          # The site lives at https://<owner>.github.io/<repository name>/, so every file path starts with /<repository name>.
+          BASE_PATH: /${{ github.event.repository.name }}
+        run: |
+          # Tell Expo about the /<repository name>/ folder for this build only (app.json in the repo is not changed).
+          node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync('app.json','utf8'));j.expo.experiments={...j.expo.experiments,baseUrl:process.env.BASE_PATH};fs.writeFileSync('app.json',JSON.stringify(j,null,2))"
+          npx expo export --platform web --output-dir dist --source-maps
+          # List the open-source licenses of everything inside the website (and remove the source maps).
+          node scripts/third-party-licenses.mjs dist
+          # Home-screen icon and name, the address fix, and 404.html so links like /marketplace/mr-gold open.
+          node scripts/finish-website.mjs dist "$BASE_PATH"
+
+      - name: Package the website for GitHub Pages
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: mobile/dist
+
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request' && needs.build.outputs.pages-on == 'true'
+    # Only one publish at a time. A newer one waits instead of cancelling one that is halfway done.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+
+      - name: Show the link
+        run: echo "## Live at ${{ steps.deployment.outputs.page_url }}" >> "$GITHUB_STEP_SUMMARY"
