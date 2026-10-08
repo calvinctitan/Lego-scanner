@@ -337,8 +337,8 @@ export default function ScanScreen() {
                 <View style={styles.offText}>
                   <Text style={[styles.offTitle, { color: t.warningText }]}>Test version: scanning is off</Text>
                   <Text style={[styles.offBody, { color: t.warningText }]}>
-                    Scanning needs your own Legará server, and each scan costs a few cents, so it’s switched off and
-                    nothing can be charged. Everything else works, so try the Marketplace.
+                    Scanning needs a Legará server, and each scan costs a few cents, so it’s switched off in this test
+                    version and nothing can be charged. Everything else works, so try the Marketplace.
                   </Text>
                 </View>
               </View>
