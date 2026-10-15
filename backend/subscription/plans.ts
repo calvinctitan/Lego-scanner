@@ -8,7 +8,7 @@
 //
 // The outline, one file per part:
 //   Part I    plans.ts        What each plan includes
-//   Part II   usage.ts        Counting each person's scans on the server
+//   Part II   usage.ts        Counting scans on the server
 //   Part III  entitlement.ts  Knowing which plan a person has
 //   Part IV   gate.ts         The check before every scan
 //   Part V    (not built)     Upgrading, through Apple, with a parent
@@ -19,10 +19,11 @@ export type PlanId = 'free' | 'plus';
 
 export type Plan = {
   id: PlanId;
+  /** "Legará Plus" is a placeholder; a paid plan needs the app's new name (README, "Before you promote…"). */
   name: string;
-  /** Scans allowed per calendar month, counted by the server's clock (UTC). */
+  /** Scans allowed per calendar month. */
   scansPerMonth: number;
-  /** A daily cap too, so one person can't use up a month (or run up a bill) in one sitting. */
+  /** A daily cap too, so one person can't use up a month in one sitting. */
   scansPerDay: number;
 };
 
@@ -32,3 +33,10 @@ export const PLANS: Record<PlanId, Plan> = {
   free: { id: 'free', name: 'Free', scansPerMonth: 5, scansPerDay: 3 },
   plus: { id: 'plus', name: 'Legará Plus', scansPerMonth: 75, scansPerDay: 15 },
 };
+
+/**
+ * The most scans the server will do in one day for everyone together. This is the real guard on
+ * cost: someone determined can get past a per-person limit (Part VI), but not past this.
+ * Placeholder; set it from your monthly spending limit in the Claude Console.
+ */
+export const EVERYONE_SCANS_PER_DAY = 50;

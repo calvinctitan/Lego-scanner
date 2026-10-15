@@ -4,8 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 //
 // To add a "3 free scans per day" limit later, check before starting a scan:
 //   if ((await getScansToday()) >= FREE_SCANS_PER_DAY) { /* show an upgrade message */ }
-// Reinstalling the app resets this count, so real limits belong on the server:
-// see the subscription plan outline in docs/subscription-plan.md.
+// Reinstalling the app resets this count, so the real limits will be decided by the server, and the
+// app will just show what the server says: see the subscription plan outline, docs/subscription-plan.md.
 export const FREE_SCANS_PER_DAY = 3;
 
 const STORAGE_KEY = 'legara.dailyScanCounts.v1';

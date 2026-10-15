@@ -33,9 +33,12 @@ export function FigureArt({ name, theme, photo, big, onPhotoError }: Props) {
           source={{ uri: photo.url }}
           style={styles.photo}
           resizeMode="contain"
-          accessible
-          accessibilityRole="image"
-          accessibilityLabel={`Picture of the ${name} minifigure`}
+          // The picture is always inside a button that already says the figure's name, so screen
+          // readers skip the picture itself instead of stopping on it twice.
+          accessible={false}
+          importantForAccessibility="no"
+          accessibilityIgnoresInvertColors
+          testID="figure-picture"
           onError={() => {
             setFailedUrl(photo.url);
             onPhotoError?.();

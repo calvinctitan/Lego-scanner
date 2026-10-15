@@ -40,14 +40,27 @@ export function themeColor(theme: string): string {
 // A figure can have a picture, shown above its price. Before adding any, read README → "Adding
 // figure pictures". These rules are built in, so a picture that breaks them is simply not shown:
 //
-// 1. Never for these themes: their characters also belong to another company (Lucasfilm, Warner
-//    Bros., Marvel, Middle-earth Enterprises), and none of them has given permission.
-export const LICENSED_THEMES: readonly string[] = ['Star Wars', 'Harry Potter', 'Marvel', 'DC', 'Lord of the Rings'];
-// 2. Only from Rebrickable, whose terms allow its minifigure pictures in other apps (check
-//    rebrickable.com/terms again before adding any). They're loaded from Rebrickable, never copied.
-const PICTURE_HOST = /^https:\/\/cdn\.rebrickable\.com\/\S+$/i;
-// 3. Each one says which Rebrickable page it came from, for the credit link.
-const PICTURE_PAGE = /^https:\/\/rebrickable\.com\/\S+$/i;
+// 1. Only these 8 figures, whose design belongs to the LEGO Group alone. Figures whose characters
+//    also belong to another company (Star Wars, Harry Potter, Marvel, DC, The Lord of the Rings,
+//    and licensed Collectible Minifigures) never show one: those companies haven't given permission.
+const PICTURES_ALLOWED_FOR: readonly string[] = [
+  'kai',
+  'lloyd',
+  'golden-ninja-lloyd',
+  'mr-gold',
+  'lady-liberty',
+  'banana-guy',
+  'red-classic-spaceman',
+  'blue-classic-spaceman',
+];
+//    And as a second check, never for these themes, whatever the list above says:
+const LICENSED_THEMES: readonly string[] = ['star wars', 'harry potter', 'marvel', 'dc', 'lord of the rings'];
+// 2. Only a minifigure picture from Rebrickable, whose terms allow its minifigure pictures in other
+//    apps (check rebrickable.com/terms again before adding any). Pictures are loaded from
+//    Rebrickable, never copied into the app.
+const PICTURE_ADDRESS = /^https:\/\/cdn\.rebrickable\.com\/media\/(?:thumbs\/)?sets\/(fig-\d{6})[/.]\S*$/i;
+// 3. Each one names the Rebrickable page of the same minifigure, for the credit link.
+const PICTURE_PAGE = /^https:\/\/rebrickable\.com\/minifigs\/(fig-\d{6})(?:[/?#]\S*)?$/i;
 
 export type FigurePhoto = {
   /** The picture's address on cdn.rebrickable.com. */
@@ -57,10 +70,14 @@ export type FigurePhoto = {
 };
 
 /** The picture this figure may show, or undefined if it has none or breaks a rule above. */
-function allowedPhoto(theme: string, url: unknown, page: unknown): FigurePhoto | undefined {
-  if (LICENSED_THEMES.includes(theme)) return undefined;
+function allowedPhoto(id: string, theme: string, url: unknown, page: unknown): FigurePhoto | undefined {
+  if (!PICTURES_ALLOWED_FOR.includes(id)) return undefined;
+  const folded = fold(theme);
+  if (LICENSED_THEMES.some((licensed) => folded.includes(licensed))) return undefined;
   if (typeof url !== 'string' || typeof page !== 'string') return undefined;
-  if (!PICTURE_HOST.test(url.trim()) || !PICTURE_PAGE.test(page.trim())) return undefined;
+  const picture = PICTURE_ADDRESS.exec(url.trim());
+  const source = PICTURE_PAGE.exec(page.trim());
+  if (!picture || !source || picture[1].toLowerCase() !== source[1].toLowerCase()) return undefined;
   return { url: url.trim(), page: page.trim() };
 }
 
@@ -114,17 +131,18 @@ export const FIGURES: Figure[] = rawFigures.map((f) => {
   const base = slugify(f.name) || 'figure';
   const count = (seen.get(base) ?? 0) + 1;
   seen.set(base, count);
+  const id = count === 1 ? base : `${base}-${count}`;
   // "photo" and "photoPage" are optional in figures.json, so read them loosely.
   const extra = f as { photo?: unknown; photoPage?: unknown };
   return {
-    id: count === 1 ? base : `${base}-${count}`,
+    id,
     name: f.name,
     theme: f.theme,
     year: f.year,
     priceUsed: f.priceUsed,
     rarity: f.rarity as Rarity,
     note: f.note,
-    photo: allowedPhoto(f.theme, extra.photo, extra.photoPage),
+    photo: allowedPhoto(id, f.theme, extra.photo, extra.photoPage),
   };
 });
 

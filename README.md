@@ -242,23 +242,23 @@ Save the file and the app refreshes on its own. The prices included are rough st
 
 Each Marketplace card has a spot for a picture of the figure, above its price. Until a figure has one, the card shows its colored brick, and tapping it opens BrickLink or eBay, where buyers see the sellers' real photos.
 
-**Why only some figures can have a picture.** LEGO owns the design of every minifigure. For Star Wars, Harry Potter, Marvel, DC and The Lord of the Rings figures, another company also owns the character, and none of them allows fan apps to show pictures. So the app **never** shows a picture for those themes, even if you add one. For the LEGO-only figures, Rebrickable's terms allow its pictures in other apps, and LEGO usually allows small, unchanged pictures in free fan projects. That's low risk, not zero. If you want zero risk, simply don't add pictures.
+**Why only some figures can have a picture.** LEGO owns the design of every minifigure. For Star Wars, Harry Potter, Marvel, DC and The Lord of the Rings figures, another company also owns the character, and none of them allows fan apps to show pictures. So the app only ever shows a picture for the 8 LEGO-only figures listed below, even if you add one somewhere else. For the LEGO-only figures, Rebrickable's terms allow its pictures in other apps, and LEGO usually allows small, unchanged pictures in free fan projects. That's low risk, not zero. If you want zero risk, simply don't add pictures.
 
 If you decide to add them, do it on a computer:
 
 1. Open [rebrickable.com/terms](https://rebrickable.com/terms) and read the part about images. Only continue if it still says minifigure images may be used on other websites or apps, and that you may link to them. Save that page as a PDF with today's date, and keep it on your computer, not on GitHub.
-2. Only these 8 figures: **Kai, Lloyd, Golden Ninja Lloyd, Mr. Gold, Lady Liberty, Banana Guy, Red Classic Spaceman, Blue Classic Spaceman.** Skip Police Officer and Firefighter, because there are too many versions to know which one the price is for. For Ninjago, pick a TV-series version, not one from *The LEGO Ninjago Movie*.
-3. On Rebrickable, open the figure's page. Right-click its picture, choose **Copy image address**, and paste it into a note along with the page's address. Do it by hand; Rebrickable doesn't allow downloading pictures with programs.
-4. Add both addresses to the figure in `mobile/src/data/figures.json`:
+2. Only these 8 figures (the app ignores pictures for any other): **Kai, Lloyd, Golden Ninja Lloyd, Mr. Gold, Lady Liberty, Banana Guy, Red Classic Spaceman, Blue Classic Spaceman.** Police Officer and Firefighter aren't on the list, because there are too many versions to know which one the price is for. For Ninjago, pick a TV-series version, not one from *The LEGO Ninjago Movie*.
+3. On Rebrickable, open the figure's page (its address looks like `rebrickable.com/minifigs/fig-012345/…`). Right-click its picture, choose **Copy image address**, and paste it into a note along with the page's address. Do it by hand; Rebrickable doesn't allow downloading pictures with programs.
+4. Add both addresses to the figure in `mobile/src/data/figures.json`. Put a comma at the end of the figure's `note` line, then add these two lines under it (the last one has no comma):
    ```json
-   "note": "Only 5,000 were hidden in Series 10 blind bags.",
-   "photo": "https://cdn.rebrickable.com/media/…",
-   "photoPage": "https://rebrickable.com/minifigs/…"
+   "note": "(keep the note that's already there)",
+   "photo": "https://cdn.rebrickable.com/media/sets/fig-012345/…",
+   "photoPage": "https://rebrickable.com/minifigs/fig-012345/…"
    ```
-   (Or paste the addresses to Claude and ask it to add them.)
-5. Check the app and the website. If an address is wrong, the brick just shows instead, so nothing breaks.
+   Both addresses must have the same `fig-` number. (Or paste the addresses to Claude and ask it to add them.)
+5. Check the app and the website. If an address is wrong, the brick shows instead. If the app shows a red error screen, a comma or quote mark is missing in `figures.json`: check the lines you just added.
 
-Never crop or edit the pictures, never use one as the app icon or in an ad, and don't use pictures from Google Images, LEGO.com, BrickLink or eBay listings. Before you put the app on the App Store or earn any money from it, check all of this again with a parent: LEGO's tolerance only covers free fan projects.
+Never crop or edit the pictures, never use one as the app icon or in an ad, and don't use pictures from Google Images, LEGO.com, BrickLink or eBay listings. Before you put the app on the App Store or earn any money from it, **remove the pictures** (every `photo` and `photoPage`) unless the LEGO Group has given you written permission: LEGO's tolerance only covers free fan projects.
 
 ---
 
@@ -266,7 +266,7 @@ Never crop or edit the pictures, never use one as the app icon or in an ad, and 
 
 The app quietly counts how many scans you do each day, saved only on your phone. Nothing is limited yet. When you're ready to add "3 free scans per day", the counter and a ready-made `FREE_SCANS_PER_DAY = 3` setting are in `mobile/src/lib/scanCounter.ts`, with a comment showing where the check would go.
 
-Because reinstalling the app resets that counter, real limits belong on the server. [docs/subscription-plan.md](docs/subscription-plan.md) is an outline of how a subscription plan would work (free scans, Legará Plus, the check before each scan), with matching code skeletons in `backend/subscription/`. None of it is switched on, and nothing in it involves money.
+Reinstalling the app resets that counter, so real limits need to be checked by the server, together with a spending limit. [docs/subscription-plan.md](docs/subscription-plan.md) is an outline of how a subscription plan would work (free scans, Legará Plus, the check before each scan), with matching code skeletons in `backend/subscription/`. None of it is switched on, and nothing in it involves money.
 
 ---
 
@@ -311,7 +311,7 @@ Because reinstalling the app resets that counter, real limits belong on the serv
 4. **Accounts held by an adult**: the Apple Developer Program ($99/year) and the Claude API account.
 5. **For the subscription plan:** Apple's In-App Purchase (required for paid features in iPhone apps) and a paid Vercel plan.
 6. **Full open-source license notices** in the app.
-7. **Figure pictures:** re-check the rules in [Adding figure pictures](#adding-figure-pictures-optional). LEGO's tolerance is for free fan projects only.
+7. **Figure pictures:** remove them (every `photo` and `photoPage` in `figures.json`) unless the LEGO Group gives written permission. LEGO's tolerance is for free fan projects only. See [Adding figure pictures](#adding-figure-pictures-optional).
 
 ---
 
