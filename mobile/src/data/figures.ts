@@ -3,6 +3,7 @@ import rawFigures from './figures.json';
 
 // To add, remove, or change figures, edit figures.json in this folder.
 // Each entry needs: name, theme, year, priceUsed (US dollars), rarity, note.
+// Optional: photo and photoPage (see "Figure pictures" below).
 
 export const THEMES = [
   'Star Wars',
@@ -35,6 +36,34 @@ export function themeColor(theme: string): string {
   return THEME_COLORS[theme as Theme] ?? '#6C6E68';
 }
 
+// ─── Figure pictures ─────────────────────────────────────────────────────────
+// A figure can have a picture, shown above its price. Before adding any, read README → "Adding
+// figure pictures". These rules are built in, so a picture that breaks them is simply not shown:
+//
+// 1. Never for these themes: their characters also belong to another company (Lucasfilm, Warner
+//    Bros., Marvel, Middle-earth Enterprises), and none of them has given permission.
+export const LICENSED_THEMES: readonly string[] = ['Star Wars', 'Harry Potter', 'Marvel', 'DC', 'Lord of the Rings'];
+// 2. Only from Rebrickable, whose terms allow its minifigure pictures in other apps (check
+//    rebrickable.com/terms again before adding any). They're loaded from Rebrickable, never copied.
+const PICTURE_HOST = /^https:\/\/cdn\.rebrickable\.com\/\S+$/i;
+// 3. Each one says which Rebrickable page it came from, for the credit link.
+const PICTURE_PAGE = /^https:\/\/rebrickable\.com\/\S+$/i;
+
+export type FigurePhoto = {
+  /** The picture's address on cdn.rebrickable.com. */
+  url: string;
+  /** The figure's page on rebrickable.com, linked from the credit. */
+  page: string;
+};
+
+/** The picture this figure may show, or undefined if it has none or breaks a rule above. */
+function allowedPhoto(theme: string, url: unknown, page: unknown): FigurePhoto | undefined {
+  if (LICENSED_THEMES.includes(theme)) return undefined;
+  if (typeof url !== 'string' || typeof page !== 'string') return undefined;
+  if (!PICTURE_HOST.test(url.trim()) || !PICTURE_PAGE.test(page.trim())) return undefined;
+  return { url: url.trim(), page: page.trim() };
+}
+
 export type Figure = {
   id: string;
   name: string;
@@ -43,6 +72,7 @@ export type Figure = {
   priceUsed: number;
   rarity: Rarity;
   note: string;
+  photo?: FigurePhoto;
 };
 
 /** "Cloud City Boba Fett" → "CF", "Mr. Gold" → "MG" */
@@ -84,6 +114,8 @@ export const FIGURES: Figure[] = rawFigures.map((f) => {
   const base = slugify(f.name) || 'figure';
   const count = (seen.get(base) ?? 0) + 1;
   seen.set(base, count);
+  // "photo" and "photoPage" are optional in figures.json, so read them loosely.
+  const extra = f as { photo?: unknown; photoPage?: unknown };
   return {
     id: count === 1 ? base : `${base}-${count}`,
     name: f.name,
@@ -92,8 +124,12 @@ export const FIGURES: Figure[] = rawFigures.map((f) => {
     priceUsed: f.priceUsed,
     rarity: f.rarity as Rarity,
     note: f.note,
+    photo: allowedPhoto(f.theme, extra.photo, extra.photoPage),
   };
 });
+
+/** True when at least one figure shows a Rebrickable picture, so the credits mention Rebrickable. */
+export const ANY_PHOTOS = FIGURES.some((f) => f.photo);
 
 export function getFigure(id: string | undefined): Figure | undefined {
   return FIGURES.find((f) => f.id === id);

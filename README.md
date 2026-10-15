@@ -238,6 +238,28 @@ All the Marketplace figures live in one file: `mobile/src/data/figures.json`. Ea
 
 Save the file and the app refreshes on its own. The prices included are rough starting estimates, so update them as you like. When you do, also change `PRICES_CHECKED` near the top of `mobile/src/data/figures.ts` (for example to `'March 2027'`), because the app shows that date next to the prices.
 
+### Adding figure pictures (optional)
+
+Each Marketplace card has a spot for a picture of the figure, above its price. Until a figure has one, the card shows its colored brick, and tapping it opens BrickLink or eBay, where buyers see the sellers' real photos.
+
+**Why only some figures can have a picture.** LEGO owns the design of every minifigure. For Star Wars, Harry Potter, Marvel, DC and The Lord of the Rings figures, another company also owns the character, and none of them allows fan apps to show pictures. So the app **never** shows a picture for those themes, even if you add one. For the LEGO-only figures, Rebrickable's terms allow its pictures in other apps, and LEGO usually allows small, unchanged pictures in free fan projects. That's low risk, not zero. If you want zero risk, simply don't add pictures.
+
+If you decide to add them, do it on a computer:
+
+1. Open [rebrickable.com/terms](https://rebrickable.com/terms) and read the part about images. Only continue if it still says minifigure images may be used on other websites or apps, and that you may link to them. Save that page as a PDF with today's date, and keep it on your computer, not on GitHub.
+2. Only these 8 figures: **Kai, Lloyd, Golden Ninja Lloyd, Mr. Gold, Lady Liberty, Banana Guy, Red Classic Spaceman, Blue Classic Spaceman.** Skip Police Officer and Firefighter, because there are too many versions to know which one the price is for. For Ninjago, pick a TV-series version, not one from *The LEGO Ninjago Movie*.
+3. On Rebrickable, open the figure's page. Right-click its picture, choose **Copy image address**, and paste it into a note along with the page's address. Do it by hand; Rebrickable doesn't allow downloading pictures with programs.
+4. Add both addresses to the figure in `mobile/src/data/figures.json`:
+   ```json
+   "note": "Only 5,000 were hidden in Series 10 blind bags.",
+   "photo": "https://cdn.rebrickable.com/media/…",
+   "photoPage": "https://rebrickable.com/minifigs/…"
+   ```
+   (Or paste the addresses to Claude and ask it to add them.)
+5. Check the app and the website. If an address is wrong, the brick just shows instead, so nothing breaks.
+
+Never crop or edit the pictures, never use one as the app icon or in an ad, and don't use pictures from Google Images, LEGO.com, BrickLink or eBay listings. Before you put the app on the App Store or earn any money from it, check all of this again with a parent: LEGO's tolerance only covers free fan projects.
+
 ---
 
 ## The hidden daily scan counter
@@ -278,7 +300,7 @@ Because reinstalling the app resets that counter, real limits belong on the serv
 - **This GitHub repository and the test website are public.** On GitHub's free plan the website only works while the repository is public, so don't make it private. To take the website offline instead, use **Unpublish site** (see [The test website](#the-test-website-for-the-project-owner)).
 - **The web address contains "Lego"** (from the repository name). LEGO asks fans not to put its name in web addresses. That's low risk for a free, clearly labelled fan demo, but if you'd like to rename the repository (for example to `legara`), do it before you share the link or QR code widely: GitHub doesn't forward the old website address after a rename.
 - **Never put your Claude API key or your server address in the code.** The key lives only in Vercel, and the address goes in `mobile/.env.local`, which is never uploaded.
-- **Inside the app**, *About Legará and legal notices* (at the bottom of both tabs) says that Legará isn't made or endorsed by the LEGO Group, BrickLink or eBay, that buying happens on their websites, that prices are estimates, what happens to your photos, and who made the fonts and icons. The app icon and brick artwork are original (drawn by `mobile/scripts/make-icons.py`), and the Marketplace uses no photos or logos from other websites.
+- **Inside the app**, *About Legará and legal notices* (at the bottom of both tabs) says that Legará isn't made or endorsed by the LEGO Group, BrickLink or eBay, that buying happens on their websites, that prices are estimates, what happens to your photos, and who made the fonts and icons. The app icon and brick artwork are original (drawn by `mobile/scripts/make-icons.py`). The Marketplace uses no logos and, unless you add some, no pictures from other websites (see [Adding figure pictures](#adding-figure-pictures-optional)).
 - **The daily scan counter** in the app is only a friendly limit for normal users. It runs on the phone, so it can't stop someone who calls your server directly. That's why the address stays private and the rate limit and spend limit are there.
 
 **Before you promote the website widely, add anything paid, or publish on the App Store,** these must change:
@@ -289,6 +311,7 @@ Because reinstalling the app resets that counter, real limits belong on the serv
 4. **Accounts held by an adult**: the Apple Developer Program ($99/year) and the Claude API account.
 5. **For the subscription plan:** Apple's In-App Purchase (required for paid features in iPhone apps) and a paid Vercel plan.
 6. **Full open-source license notices** in the app.
+7. **Figure pictures:** re-check the rules in [Adding figure pictures](#adding-figure-pictures-optional). LEGO's tolerance is for free fan projects only.
 
 ---
 

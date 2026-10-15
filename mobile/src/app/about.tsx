@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Baseplate } from '../components/Baseplate';
 import { Tile } from '../components/Tile';
+import { ANY_PHOTOS } from '../data/figures';
 import { fonts, useTheme } from '../theme';
 
 /** About Legará: what it is and isn't, privacy, trademarks, and credits for the open-source parts. */
@@ -58,12 +59,14 @@ export default function AboutScreen() {
             their photos are saved only on your device (on the website, only in this browser). When scanning is switched on,
             the photo is sent to Claude (Anthropic’s AI) to estimate the price; Legará itself doesn’t keep or share it
             anywhere else. On the public test website scanning is off, so no photos are sent anywhere. The website is hosted
-            by GitHub Pages, which logs visitors’ IP addresses for security. Websites you open from Legará have their own
-            privacy rules.
+            by GitHub Pages, which logs visitors’ IP addresses for security.
+            {ANY_PHOTOS ? ' Figure pictures load from Rebrickable’s website, which sees your IP address like any website.' : ''}{' '}
+            Websites you open from Legará have their own privacy rules.
           </Section>
 
           <Section title="Trademarks">
-            LEGO® is a trademark of the LEGO Group of companies, which does not sponsor, authorize or endorse Legará. Star
+            LEGO®, the LEGO logo and the Minifigure are trademarks of the LEGO Group of companies, which does not sponsor,
+            authorize or endorse Legará. Legará doesn’t use the LEGO logo. Star
             Wars, Harry Potter, Marvel, DC, The Lord of the Rings, NINJAGO, BrickLink, eBay, Claude and all character and
             product names are trademarks of their owners, who don’t sponsor or endorse Legará. Names are used only to
             identify the figures and websites described.
@@ -72,8 +75,11 @@ export default function AboutScreen() {
           <Section title="Credits">
             Fonts: Lilita One, copyright 2011 Juan Montoreano, and Nunito, copyright 2014 The Nunito Project Authors, both
             under the SIL Open Font License 1.1. Icons: Ionicons by Ionic (MIT License), via @expo/vector-icons (MIT License).
-            Built with Expo and React Native (MIT License). The app icon and brick artwork are original to Legará. On the
-            website, the full license texts of all the open-source code it contains are in third-party-licenses.txt.
+            Built with Expo and React Native (MIT License). The app icon and brick artwork are original to Legará.
+            {ANY_PHOTOS
+              ? ' Some Marketplace pictures load from Rebrickable (rebrickable.com) under its terms; minifigure designs © The LEGO Group. Legará isn’t part of Rebrickable.'
+              : ''}{' '}
+            On the website, the full license texts of all the open-source code it contains are in third-party-licenses.txt.
           </Section>
         </Tile>
       </ScrollView>

@@ -13,7 +13,7 @@ import { SortMenu, type SortKey } from '../../../components/SortMenu';
 import { TextLink } from '../../../components/TextLink';
 import { ALL_THEMES, ThemeChips } from '../../../components/ThemeChips';
 import { Tile } from '../../../components/Tile';
-import { FIGURES, matchesSearch, type Figure } from '../../../data/figures';
+import { ANY_PHOTOS, FIGURES, matchesSearch, type Figure } from '../../../data/figures';
 import { fonts, useTheme } from '../../../theme';
 
 const PADDING = 16;
@@ -122,7 +122,7 @@ function MarketplaceHeader({ query, onQuery, theme, onTheme, sort, onSort, count
         <Tile style={styles.hero}>
           <Text style={[styles.title, { color: t.text }]}>Marketplace</Text>
           <Text style={[styles.subtitle, { color: t.textMuted }]}>
-            Tap a figure to buy it on BrickLink or eBay. Legará doesn’t sell anything itself.
+            Tap a figure to see real photos and buy it on BrickLink or eBay. Legará doesn’t sell anything itself.
           </Text>
 
           {/* The whole box highlights while typing (instead of the browser's square outline). */}
@@ -168,6 +168,7 @@ function MarketplaceFooter() {
     <View style={[styles.footer, { backgroundColor: t.card }]}>
       <Text style={[styles.footerText, { color: t.text }]}>
         Prices are rough estimates. Buying happens on BrickLink or eBay, from their sellers; Legará isn’t part of it.
+        {ANY_PHOTOS ? ' Figure pictures: Rebrickable. Minifigure designs © The LEGO Group.' : ''}
       </Text>
       <TextLink icon="information-circle-outline" label="About Legará and legal notices" onPress={() => router.push('/about')} />
     </View>

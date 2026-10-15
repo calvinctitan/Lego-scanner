@@ -30,6 +30,8 @@ export function FigureDetail({ fullScreen = false }: Props) {
   const figure = getFigure(id);
   // Tapping the big picture opens the same "where to buy" sheet as the Marketplace list.
   const [buyOpen, setBuyOpen] = useState(false);
+  // The credit under the picture goes away if the picture can't load (the brick shows instead).
+  const [photoFailed, setPhotoFailed] = useState(false);
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/marketplace'));
 
@@ -69,8 +71,15 @@ export function FigureDetail({ fullScreen = false }: Props) {
               accessibilityHint="Shows where to buy it."
               style={({ pressed }) => pressed && styles.artPressed}
             >
-              <FigureArt name={figure.name} theme={figure.theme} big />
+              <FigureArt
+                name={figure.name}
+                theme={figure.theme}
+                photo={figure.photo}
+                big
+                onPhotoError={() => setPhotoFailed(true)}
+              />
             </Pressable>
+            {figure.photo && !photoFailed ? <PhotoCredit page={figure.photo.page} /> : null}
             <BuySheet figure={buyOpen ? figure : null} onClose={() => setBuyOpen(false)} />
 
             <Tile style={styles.card}>
@@ -100,6 +109,19 @@ export function FigureDetail({ fullScreen = false }: Props) {
   );
 }
 
+/** Who the picture comes from, with a link to its page. */
+function PhotoCredit({ page }: { page: string }) {
+  const t = useTheme();
+  return (
+    <View style={styles.credit}>
+      <Text style={[styles.creditText, { color: t.textMuted }]}>
+        Picture from Rebrickable, showing one version of this figure. Minifigure design © The LEGO Group.
+      </Text>
+      <TextLink icon="image-outline" label="Picture source" onPress={() => openInAppBrowser(page)} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   header: { paddingHorizontal: 16, paddingBottom: 10 },
   content: { paddingHorizontal: 16, paddingBottom: 32, gap: 18 },
@@ -122,6 +144,8 @@ const styles = StyleSheet.create({
   subtitle: { fontFamily: fonts.bodyBold, fontSize: 16 },
   note: { fontFamily: fonts.body, fontSize: 16, lineHeight: 23 },
   artPressed: { transform: [{ translateY: 2 }] },
+  credit: { gap: 2, marginTop: -8 },
+  creditText: { fontFamily: fonts.bodySemiBold, fontSize: 13, lineHeight: 17 },
   priceBlock: { gap: 6 },
   caption: { fontFamily: fonts.bodySemiBold, fontSize: 14, lineHeight: 19 },
 });

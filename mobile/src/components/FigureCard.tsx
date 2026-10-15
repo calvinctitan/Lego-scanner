@@ -25,7 +25,7 @@ export function FigureCard({ figure, width, onPress }: Props) {
     >
       {({ pressed }) => (
         <Tile pressed={pressed} fill style={styles.card}>
-          <FigureArt name={figure.name} theme={figure.theme} />
+          <FigureArt name={figure.name} theme={figure.theme} photo={figure.photo} />
           <Text style={[styles.name, { color: t.text }]} numberOfLines={2}>
             {figure.name}
           </Text>

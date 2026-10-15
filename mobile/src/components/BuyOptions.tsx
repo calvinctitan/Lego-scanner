@@ -9,7 +9,7 @@ import { BrickButton } from './BrickButton';
 
 /** Said wherever someone can leave the app to buy, so it's clear Legará isn't the seller. */
 export const BUYING_NOTE =
-  'You buy on that website, from its sellers, under its rules. Legará doesn’t sell anything, doesn’t take payments, and isn’t part of BrickLink or eBay. Under 18? Ask a parent before you buy.';
+  'You buy on that website, from its sellers, under its rules. Check that the seller’s photos show the exact figure you want. Legará doesn’t sell anything, doesn’t take payments, and isn’t part of BrickLink or eBay. Under 18? Ask a parent before you buy.';
 
 /** The two store buttons, each saying where it goes, plus the note that buying happens on the store's website. */
 export function BuyOptions({ figure }: { figure: Figure }) {
