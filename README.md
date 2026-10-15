@@ -244,6 +244,8 @@ Save the file and the app refreshes on its own. The prices included are rough st
 
 The app quietly counts how many scans you do each day, saved only on your phone. Nothing is limited yet. When you're ready to add "3 free scans per day", the counter and a ready-made `FREE_SCANS_PER_DAY = 3` setting are in `mobile/src/lib/scanCounter.ts`, with a comment showing where the check would go.
 
+Because reinstalling the app resets that counter, real limits belong on the server. [docs/subscription-plan.md](docs/subscription-plan.md) is an outline of how a subscription plan would work (free scans, Legará Plus, the check before each scan), with matching code skeletons in `backend/subscription/`. None of it is switched on, and nothing in it involves money.
+
 ---
 
 ## What does it cost?
@@ -295,6 +297,7 @@ The app quietly counts how many scans you do each day, saved only on your phone.
 ```
 backend/
   api/scan.ts            The backend: checks the photo, asks Claude, returns the price JSON
+  subscription/          Skeleton of a future subscription plan (not switched on; see docs/subscription-plan.md)
 mobile/
   src/config.ts          Where the app finds your server (reads mobile/.env.local, Step 3)
   src/app/               The screens (each file is a screen)
@@ -312,6 +315,7 @@ mobile/
   scripts/finish-website.mjs, scripts/third-party-licenses.mjs   Used when building the test website
 .github/workflows/publish-test-version.yml   Builds and publishes the test website
 docs/test-version-qr.png  The QR code at the top of this page
+docs/subscription-plan.md The subscription plan outline (nothing is switched on)
 ```
 
 **Behind the scenes:** the server uses Claude Opus 5.5 with *structured outputs*, which forces Claude's answer into the exact JSON shape the app expects. If one of Claude's safety checks ever wrongly declines a photo, the backend automatically retries on Anthropic's recommended fallback model.
