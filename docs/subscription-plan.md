@@ -39,8 +39,8 @@ Each part points to the matching code skeleton.
 
 1. A scan arrives. The server looks up the person's plan (Part III).
 2. It adds the scan to their count, and to everyone's count, **first**. Then it checks the new numbers. (Checking first and counting after would let many scans sent at the same moment all get through.)
-3. If they're over a limit, it takes the scan back off and answers kindly ("Try again later!"). Claude isn't asked, so it costs nothing.
-4. If not, it asks Claude. The scan stays counted even if Claude's answer fails, because Claude still charged for it.
+3. If they're over a limit, it takes the scan back off and answers kindly ("Try again later!"). The AI isn't asked, so it costs nothing.
+4. If not, it asks the AI. The scan stays counted even if the answer fails, because the AI service still counts it (Cloudflare's free allowance, or Claude's credit).
 
 None of this runs yet: `api/scan.ts` doesn't call the check. Part VII says what to do before it does.
 
@@ -56,7 +56,7 @@ None of this runs yet: `api/scan.ts` doesn't call the check. Part VII says what 
 
 1. The app makes a random, anonymous ID once and sends it with each scan. No name or email is needed.
    It's kept in the iPhone's Keychain, which usually survives reinstalling the app.
-   Be honest about its limits: someone determined can still make up new IDs. That's why the everyone-together cap (Part I) and the Claude spending limit (Part VII) are the real safety net.
+   Be honest about its limits: someone determined can still make up new IDs. That's why the everyone-together cap (Part I) and the AI service's own limit (Part VII) are the real safety net.
 2. After each scan, it shows how many scans are left.
 3. When the server says a limit is reached, it shows the server's friendly message instead of an error.
 4. Later: a Plans screen with Apple's Subscribe button (Part V).
@@ -64,7 +64,7 @@ None of this runs yet: `api/scan.ts` doesn't call the check. Part VII says what 
 ## VII. Before switching anything on
 
 1. Measure what a real scan costs (20–50 test scans), then set the numbers in Part I.
-2. Set a monthly spending limit in the Claude Console, as a safety net.
+2. Keep a safety net on the AI service: Cloudflare's free plan simply stops at its daily allowance; with Claude, set a monthly spending limit in the Claude Console.
 3. Replace the memory counter with a real database (Part II).
 4. Connect the check to `api/scan.ts` (the steps are at the top of `backend/subscription/gate.ts`).
 5. Protect the server so only the real app can use it (for example Apple's App Attest).

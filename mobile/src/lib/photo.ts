@@ -2,7 +2,7 @@ import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { Alert, Linking } from 'react-native';
 
-// Claude doesn't need a full 12-megapixel photo. Shrinking it makes uploads fast and cheap.
+// The AI doesn't need a full 12-megapixel photo. Shrinking it makes uploads fast and cheap.
 const MAX_SIDE = 1280;
 
 export type PreparedPhoto = {

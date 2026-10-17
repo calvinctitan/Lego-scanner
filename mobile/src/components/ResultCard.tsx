@@ -37,7 +37,7 @@ export function ResultCard(props: Props) {
   const unsure = result.confidence === 'low';
   const subtitle = themeAndYear(result.theme, result.year, unsure);
 
-  // When Claude isn't sure, mark the prices as rough. Both bricks use one font size so they match.
+  // When the AI isn't sure, mark the prices as rough. Both bricks use one font size so they match.
   const rough = unsure ? '≈ ' : '';
   const used = rough + formatRange(result.valueUsed);
   const fresh = rough + formatRange(result.valueNew);

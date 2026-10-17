@@ -1,8 +1,12 @@
 // Legará backend: one serverless function on Vercel.
 //
-// The phone app sends a photo here. This function adds the secret Claude API key
-// (stored in Vercel, never in the app), asks Claude to appraise the minifigure,
-// and sends back a small JSON answer.
+// The phone app sends a photo here. This function adds a secret key (stored in Vercel, never in
+// the app), asks an AI to appraise the minifigure, and sends back a small JSON answer.
+//
+// Which AI it asks depends on the keys you give it in Vercel (README, "Turn on scanning"):
+//   - Cloudflare Workers AI (free daily allowance): CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN
+//   - Claude (paid, more accurate):                 ANTHROPIC_API_KEY
+// If both are set, it uses Cloudflare unless SCAN_PROVIDER is set to "claude".
 //
 //   GET  /api/scan  → health check you can open in a browser
 //   POST /api/scan  → { image: "<base64 JPEG>", mediaType?: "image/jpeg" }
@@ -12,6 +16,9 @@ import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import { z } from 'zod';
 
 const MODEL = 'claude-opus-5-5';
+// Meta's Llama 4 Scout, a free-to-use model that can look at pictures. Change it in Vercel with
+// CLOUDFLARE_MODEL if Cloudflare retires it (pick another Workers AI model that accepts images).
+const CLOUDFLARE_DEFAULT_MODEL = '@cf/meta/llama-4-scout-17b-16e-instruct';
 // Vercel accepts request bodies up to 4.5 MB. The app shrinks photos to ~300 KB, so this is plenty.
 const MAX_BASE64_LENGTH = 4_400_000;
 const MEDIA_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] as const;
@@ -92,18 +99,42 @@ export function OPTIONS(): Response {
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 }
 
+type Provider = 'cloudflare' | 'claude';
+
+/** Which AI to ask: the one SCAN_PROVIDER names, otherwise the free one if its keys are set. */
+function chosenProvider(): Provider | null {
+  const wanted = (process.env.SCAN_PROVIDER ?? '').trim().toLowerCase();
+  const cloudflareReady = Boolean(process.env.CLOUDFLARE_ACCOUNT_ID?.trim() && process.env.CLOUDFLARE_API_TOKEN?.trim());
+  const claudeReady = Boolean(process.env.ANTHROPIC_API_KEY?.trim());
+  if (wanted === 'claude') return claudeReady ? 'claude' : null;
+  if (wanted === 'cloudflare') return cloudflareReady ? 'cloudflare' : null;
+  if (cloudflareReady) return 'cloudflare';
+  if (claudeReady) return 'claude';
+  return null;
+}
+
+function cloudflareModel(): string {
+  return process.env.CLOUDFLARE_MODEL?.trim() || CLOUDFLARE_DEFAULT_MODEL;
+}
+
 export function GET(): Response {
+  const provider = chosenProvider();
   return json({
     ok: true,
     message: 'Legará backend is running. The app sends photos here with a POST request.',
-    apiKeyConfigured: Boolean(process.env.ANTHROPIC_API_KEY),
+    apiKeyConfigured: provider !== null,
+    service: provider === 'cloudflare' ? `Cloudflare Workers AI (${cloudflareModel()})` : provider === 'claude' ? `Claude (${MODEL})` : null,
   });
 }
 
 export async function POST(request: Request): Promise<Response> {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error('ANTHROPIC_API_KEY is not set. Add it in Vercel → Project → Settings → Environment Variables, then redeploy.');
-    return errorResponse(500, 'The server isn’t set up yet (missing Claude API key).');
+  const provider = chosenProvider();
+  if (!provider) {
+    console.error(
+      'No AI service is set up. In Vercel → Project → Settings → Environment Variables, add CLOUDFLARE_ACCOUNT_ID and ' +
+        'CLOUDFLARE_API_TOKEN (free) or ANTHROPIC_API_KEY (Claude), then redeploy. If SCAN_PROVIDER is set, its keys must be set too.',
+    );
+    return errorResponse(500, 'The server isn’t set up yet (missing AI service key).');
   }
 
   let body: unknown;
@@ -116,6 +147,12 @@ export async function POST(request: Request): Promise<Response> {
   const photo = readPhoto(body);
   if ('error' in photo) return errorResponse(photo.status, photo.error);
 
+  return provider === 'cloudflare' ? scanWithCloudflare(photo) : scanWithClaude(photo);
+}
+
+type Photo = { data: string; mediaType: MediaType };
+
+async function scanWithClaude(photo: Photo): Promise<Response> {
   try {
     // create() rather than parse(): parse() throws before we can look at a refusal or a cut-off
     // answer, so we read and check the JSON ourselves below.
@@ -168,7 +205,135 @@ function readAppraisal(content: Anthropic.Beta.BetaContentBlock[]): Appraisal | 
   }
 }
 
-function readPhoto(body: unknown): { data: string; mediaType: MediaType } | { status: number; error: string } {
+// ─── Cloudflare Workers AI (free daily allowance) ───────────────────────────────
+
+// Free models can't be forced into an exact answer shape the way Claude can, so the shape is
+// spelled out here and the answer is read carefully (readLooseAppraisal).
+const JSON_INSTRUCTIONS = `
+
+Reply with only one JSON object and nothing else: no other words and no code fences. Use exactly these keys:
+{"isMinifigure": true or false, "name": "...", "theme": "...", "year": a number or null,
+"valueUsedLow": whole number, "valueUsedHigh": whole number, "valueNewLow": whole number, "valueNewHigh": whole number,
+"rarity": "Common" or "Uncommon" or "Rare" or "Very rare", "confidence": "high" or "medium" or "low", "note": "..."}`;
+
+async function scanWithCloudflare(photo: Photo): Promise<Response> {
+  const account = (process.env.CLOUDFLARE_ACCOUNT_ID ?? '').trim();
+  const token = (process.env.CLOUDFLARE_API_TOKEN ?? '').trim();
+  // Only for testing with a fake server; normally leave CLOUDFLARE_API_BASE unset.
+  const base = (process.env.CLOUDFLARE_API_BASE?.trim() || 'https://api.cloudflare.com/client/v4').replace(/\/+$/, '');
+
+  let response: Response;
+  try {
+    // Cloudflare's OpenAI-style "chat completions" address, with the photo sent as a data URL.
+    response = await fetch(`${base}/accounts/${encodeURIComponent(account)}/ai/v1/chat/completions`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: cloudflareModel(),
+        max_tokens: 1000,
+        temperature: 0.2,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT + JSON_INSTRUCTIONS },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: 'Appraise this minifigure.' },
+              { type: 'image_url', image_url: { url: `data:${photo.mediaType};base64,${photo.data}` } },
+            ],
+          },
+        ],
+      }),
+      // Vercel stops this function after 60 seconds, so give up a little before that.
+      signal: AbortSignal.timeout(55_000),
+    });
+  } catch (error) {
+    console.error('Cloudflare Workers AI request failed:', error);
+    if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+      return errorResponse(504, 'That took too long. Please try again.');
+    }
+    return errorResponse(503, 'The AI service is busy right now. Please try again in a moment.');
+  }
+
+  const data: unknown = await response.json().catch(() => null);
+  if (!response.ok) {
+    // Full details go to the Vercel logs; the app gets a short, friendly message.
+    const details = JSON.stringify(data) ?? '';
+    console.error(`Cloudflare Workers AI error ${response.status}:`, details.slice(0, 2000));
+    if (/allocation|neurons/i.test(details)) {
+      return errorResponse(429, 'Today’s free scans are used up. Please try again tomorrow.');
+    }
+    if (response.status === 401 || response.status === 403) {
+      return errorResponse(500, 'The server’s Cloudflare key isn’t working. Check it in Vercel.');
+    }
+    if (response.status === 429) return errorResponse(429, 'Lots of scans right now. Please try again in a minute.');
+    if (response.status >= 500) return errorResponse(503, 'The AI service is busy right now. Please try again in a moment.');
+    return errorResponse(400, 'The AI service couldn’t use that request. Try another photo, or check the server logs.');
+  }
+
+  const appraisal = readLooseAppraisal(messageText(data));
+  if (!appraisal) {
+    console.error('No usable answer from Cloudflare Workers AI:', (JSON.stringify(data) ?? '').slice(0, 2000));
+    return errorResponse(502, 'Couldn’t read the appraisal. Please try again.');
+  }
+  return json(toScanResponse(appraisal));
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** The answer's text, from Cloudflare's OpenAI-style reply (or its own "result.response" format). */
+function messageText(data: unknown): unknown {
+  if (!isRecord(data)) return null;
+  const choice: unknown = Array.isArray(data.choices) ? data.choices[0] : undefined;
+  if (isRecord(choice) && isRecord(choice.message)) return choice.message.content;
+  if (isRecord(data.result)) return data.result.response;
+  return null;
+}
+
+/** "$1,200" → 1200, 15 → 15, anything else → null. */
+function toNumber(value: unknown): number | null {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value !== 'string') return null;
+  const number = Number.parseFloat(value.replace(/[^0-9.\-]/g, ''));
+  return Number.isFinite(number) ? number : null;
+}
+
+/** Finds the JSON object in a free model's answer, forgiving small slips like numbers written as text. */
+export function readLooseAppraisal(content: unknown): Appraisal | null {
+  let value: unknown = content;
+  if (Array.isArray(value)) value = value.map((part) => (isRecord(part) && typeof part.text === 'string' ? part.text : '')).join('');
+  if (typeof value === 'string') {
+    const start = value.indexOf('{');
+    const end = value.lastIndexOf('}');
+    if (start < 0 || end <= start) return null;
+    try {
+      value = JSON.parse(value.slice(start, end + 1));
+    } catch {
+      return null;
+    }
+  }
+  if (!isRecord(value)) return null;
+  const v = value;
+  // Some models answer "valueUsed": [low, high] instead of two separate numbers.
+  const pair = (key: string, index: number) => (Array.isArray(v[key]) ? (v[key] as unknown[])[index] : undefined);
+  const result = Appraisal.safeParse({
+    isMinifigure: v.isMinifigure === true || String(v.isMinifigure).trim().toLowerCase() === 'true',
+    name: typeof v.name === 'string' ? v.name : '',
+    theme: typeof v.theme === 'string' ? v.theme : '',
+    year: toNumber(v.year),
+    valueUsedLow: toNumber(v.valueUsedLow ?? pair('valueUsed', 0)) ?? 0,
+    valueUsedHigh: toNumber(v.valueUsedHigh ?? pair('valueUsed', 1)) ?? 0,
+    valueNewLow: toNumber(v.valueNewLow ?? pair('valueNew', 0)) ?? 0,
+    valueNewHigh: toNumber(v.valueNewHigh ?? pair('valueNew', 1)) ?? 0,
+    rarity: typeof v.rarity === 'string' ? v.rarity : '',
+    confidence: typeof v.confidence === 'string' ? v.confidence : '',
+    note: typeof v.note === 'string' ? v.note : '',
+  });
+  return result.success ? result.data : null;
+}
+
+function readPhoto(body: unknown): Photo | { status: number; error: string } {
   if (typeof body !== 'object' || body === null) return { status: 400, error: 'Missing photo.' };
   const { image, mediaType } = body as { image?: unknown; mediaType?: unknown };
 

@@ -34,7 +34,7 @@ export function monthKey(now: Date): string {
  *
  * TODO (later): a real database instead, for example Upstash Redis (it has a free plan).
  * Use Redis INCR for add(): it adds 1 and gives back the new number in one step. The gate adds
- * the scan BEFORE asking Claude and decides on that new number, so scans sent at the same moment
+ * the scan BEFORE asking the AI and decides on that new number, so scans sent at the same moment
  * can't all squeeze through on the last free scan.
  */
 export class MemoryUsageStore implements UsageStore {

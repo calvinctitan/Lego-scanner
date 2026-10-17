@@ -29,8 +29,8 @@ function scanEndpoint(): string {
 }
 
 /**
- * Sends the photo to our backend, which asks Claude what the figure is worth.
- * The app never talks to Claude directly, so the API key never ships inside the app.
+ * Sends the photo to our backend, which asks an AI (Cloudflare Workers AI or Claude) what the figure
+ * is worth. The app never talks to the AI directly, so the secret key never ships inside the app.
  */
 export async function analyzePhoto(base64Jpeg: string, signal: AbortSignal): Promise<ScanResult> {
   if (!scanningIsSetUp()) {

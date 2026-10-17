@@ -49,33 +49,35 @@ export default function AboutScreen() {
           </Section>
 
           <Section title="Prices">
-            Prices are rough estimates for information only. Scan prices are an AI estimate (made by Claude, Anthropic’s AI)
-            based on past eBay and BrickLink sales, not live prices, and they can be wrong. Check recent sold listings before
-            you buy or sell.
+            Prices are rough estimates for information only. Scan prices are an AI’s estimate, based on past eBay and
+            BrickLink sales it has learned about. They aren’t live prices, and they can be wrong. Check recent sold
+            listings before you buy or sell.
           </Section>
 
           <Section title="Privacy">
             Legará has no accounts, ads, cookies or tracking, and doesn’t collect your personal information. Your scans and
             their photos are saved only on your device (on the website, only in this browser). When scanning is switched on,
-            the photo is sent to Claude (Anthropic’s AI) to estimate the price; Legará itself doesn’t keep or share it
-            anywhere else. On the public test website scanning is off, so no photos are sent anywhere. The website is hosted
-            by GitHub Pages, which logs visitors’ IP addresses for security.
+            the photo is sent to the AI service the Legará server uses (Cloudflare Workers AI, or Anthropic’s Claude) to
+            estimate the price; Legará itself doesn’t keep or share it anywhere else. On the public test website scanning
+            is off, so no photos are sent anywhere. The website is hosted by GitHub Pages, which logs visitors’ IP
+            addresses for security.
             {ANY_PHOTOS ? ' Figure pictures load from Rebrickable’s website, which sees your IP address like any website.' : ''}{' '}
             Websites you open from Legará have their own privacy rules.
           </Section>
 
           <Section title="Trademarks">
             LEGO®, the LEGO logo and the Minifigure are trademarks of the LEGO Group of companies, which does not sponsor,
-            authorize or endorse Legará. Legará doesn’t use the LEGO logo. Star
-            Wars, Harry Potter, Marvel, DC, The Lord of the Rings, NINJAGO, BrickLink, eBay, Claude and all character and
-            product names are trademarks of their owners, who don’t sponsor or endorse Legará. Names are used only to
-            identify the figures and websites described.
+            authorize or endorse Legará. Legará doesn’t use the LEGO logo. Star Wars, Harry Potter, Marvel, DC, The Lord
+            of the Rings, NINJAGO, BrickLink, eBay, Cloudflare, Llama, Claude and all character and product names are
+            trademarks of their owners, who don’t sponsor or endorse Legará. Names are used only to identify the figures,
+            websites and services described.
           </Section>
 
           <Section title="Credits">
             Fonts: Lilita One, copyright 2011 Juan Montoreano, and Nunito, copyright 2014 The Nunito Project Authors, both
             under the SIL Open Font License 1.1. Icons: Ionicons by Ionic (MIT License), via @expo/vector-icons (MIT License).
             Built with Expo and React Native (MIT License). The app icon and brick artwork are original to Legará.
+            Scanning can use Meta’s Llama 4 model through Cloudflare Workers AI (Built with Llama), or Anthropic’s Claude.
             {ANY_PHOTOS
               ? ' Some Marketplace pictures load from Rebrickable (rebrickable.com) under its terms; minifigure designs © The LEGO Group. Legará isn’t part of Rebrickable.'
               : ''}{' '}

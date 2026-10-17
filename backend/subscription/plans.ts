@@ -37,6 +37,6 @@ export const PLANS: Record<PlanId, Plan> = {
 /**
  * The most scans the server will do in one day for everyone together. This is the real guard on
  * cost: someone determined can get past a per-person limit (Part VI), but not past this.
- * Placeholder; set it from your monthly spending limit in the Claude Console.
+ * Placeholder; set it from your AI service's limit (Cloudflare's free daily allowance, or your Claude spending limit).
  */
 export const EVERYONE_SCANS_PER_DAY = 50;

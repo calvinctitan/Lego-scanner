@@ -3,10 +3,10 @@
 // How this plugs into api/scan.ts later (not done yet, so nothing is limited today):
 //   1. Replace MemoryUsageStore with a real database (usage.ts). Memory doesn't work on Vercel.
 //   2. The app sends its anonymous user ID with each scan (Part VI).
-//   3. Before asking Claude:  const decision = await reserveScan(userId, deps);
+//   3. Before asking the AI:  const decision = await reserveScan(userId, deps);
 //      if (!decision.allowed) return a 429 error with { error: decision.message, limit: decision.reason }.
 //      The "limit" field lets the app tell this apart from the existing "Lots of scans right now" 429.
-//   4. Then ask Claude. The scan stays counted even if the answer fails, because Claude still charged.
+//   4. Then ask the AI. The scan stays counted even if the answer fails, because the AI service still counts it.
 //   5. Turn it on: set SCAN_LIMITS=on in Vercel's Environment Variables, then redeploy.
 
 import type { PlanLookup } from './entitlement.js';
@@ -67,7 +67,7 @@ export function decide(plan: Plan, before: Usage): ScanDecision {
 }
 
 /**
- * Call this BEFORE asking Claude. It counts the scan first and then decides, so scans sent at the
+ * Call this BEFORE asking the AI. It counts the scan first and then decides, so scans sent at the
  * same moment can't all slip through. If the scan is refused, the count is taken back off.
  * While limits are off it lets every scan through and counts nothing.
  */

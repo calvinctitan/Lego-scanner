@@ -16,7 +16,7 @@
 
 Point your iPhone at a LEGO® minifigure and Legará estimates what it's worth. There's also a **Marketplace** tab: tap a figure and it sends you to BrickLink or eBay to buy it.
 
-**This is a test version.** It isn't on the App Store, and out of the box it costs nothing: scanning stays switched off until you deliberately set up your own server (which costs a few cents per scan).
+**This is a test version.** It isn't on the App Store, and out of the box it costs nothing: scanning stays switched off until you deliberately set up your own server (free with Cloudflare's daily allowance, or a few cents per scan with Claude).
 
 This guide assumes you've never built an app before. Follow the steps in order, and copy the commands exactly.
 
@@ -93,28 +93,42 @@ Either way, your terminal should now be "inside" the project folder, which conta
 
 ---
 
-## Optional: turn on scanning in the real app (costs money)
+## Optional: turn on scanning in the real app
 
-Skip this whole part if you want the test to stay free. Scanning in the real app needs your own small server, because the secret Claude API key must never be inside the app:
+Skip this whole part if you don't need scanning in the real app. Scanning needs your own small server, because the secret key for the AI must never be inside the app:
 
 ```
- iPhone app  ──photo──▶  your server (on Vercel)  ──photo + secret key──▶  Claude
+ iPhone app  ──photo──▶  your server (on Vercel)  ──photo + secret key──▶  the AI
  (Expo Go)   ◀──price──                            ◀──────── answer ───────
 ```
 
-- **The server** (`backend/` folder) is one small function that runs online on **Vercel** (free plan, for non-commercial use). It holds your **Claude API key** (your secret password for Claude) and passes the photo to Claude.
+- **The server** (`backend/` folder) is one small function that runs online on **Vercel** (free plan, for non-commercial use). It holds the AI's secret key and passes the photo to the AI.
 - Why the extra step? Anything inside an app can be dug out by a determined person. Keeping the key on the server means it never ships to anyone's phone.
 
-**What it costs:** the Claude API has no free tier. You buy prepaid credit first, and each scan usually uses about **2–5 US cents** of it (a rare, unusually long answer can cost up to about 35 cents). The Marketplace never calls Claude, so it's always free.
+**Pick which AI does the scanning** (you can switch later):
+
+| | **Option A: Cloudflare Workers AI** (start here) | **Option B: Claude** |
+|---|---|---|
+| Cost | **Free** up to a daily allowance (roughly 100 scans a day, an estimate). After that, scans pause until the next day (midnight UTC). No card needed, no surprise bills. | Prepaid credit, about **2–5 US cents per scan** (rarely up to about 35 cents). |
+| Accuracy | Good at recognizing the character, less sure about the exact version and price. It runs Meta's Llama 4 model (Built with Llama). | Best at naming the exact version and remembering prices. |
+| Your photos | Cloudflare says it doesn't use them to train AI. | Anthropic doesn't use API data to train its models by default. |
+
+Try Option A first with a few figures you know well. If its answers aren't good enough, switch to Option B. The Marketplace never uses the AI, so it's always free.
 
 **Before you start:**
 
-1. **Age:** the Claude API account (and, later, an Apple developer account) must belong to an adult. If you're under 18, ask a parent or guardian to create it and keep the billing in their name.
-2. **A Claude API key**:
-   1. Go to <https://platform.claude.com> and sign in (or create an account).
-   2. Add a small amount of credit under **Settings → Billing** ($5 is plenty to start).
-   3. On the same **Billing** page, under **Spend limits**, click **Set limit** and enter a small number (for example 5). Make sure **Auto-reload** is **off**, so it can never buy more credit by itself.
-   4. Go to **API Keys** → **Create Key**. Copy the key (it starts with `sk-ant-`) and keep it somewhere private for a few minutes. Treat it like a password: never post it or put it in the app's code.
+1. **Age:** these accounts (and, later, an Apple developer account) should belong to an adult. If you're under 18, ask a parent or guardian to create them.
+2. **The AI's keys**, for the option you picked:
+   - **Option A (Cloudflare):**
+     1. Sign up free at <https://dash.cloudflare.com/sign-up>.
+     2. In the dashboard, open **AI** → **Workers AI**, then **Use REST API**.
+     3. Click **Create a Workers AI API Token**, then create it. Copy the **token** and keep it somewhere private for a few minutes. Treat it like a password.
+     4. On the same page, copy your **Account ID**.
+   - **Option B (Claude):**
+     1. Go to <https://platform.claude.com> and sign in (or create an account).
+     2. Add a small amount of credit under **Settings → Billing** ($5 is plenty to start).
+     3. On the same **Billing** page, under **Spend limits**, click **Set limit** and enter a small number (for example 5). Make sure **Auto-reload** is **off**, so it can never buy more credit by itself.
+     4. Go to **API Keys** → **Create Key**. Copy the key (it starts with `sk-ant-`) and keep it somewhere private for a few minutes. Treat it like a password.
 3. **A Vercel account**: sign up free at <https://vercel.com> (signing up with GitHub is easiest).
 
 ---
@@ -143,13 +157,22 @@ It asks a few questions. Answer like this:
 - **In which directory is your code located?** → just press Enter (`./`)
 - **Want to modify these settings?** → `N`
 
-Now give the backend your Claude API key. It's stored safely on Vercel, not in your code:
+Now give the backend your AI keys. They're stored safely on Vercel, not in your code. Run each command, paste the value when asked, and press Enter (if it asks whether to mark it as **sensitive**, choose yes).
+
+**Option A (Cloudflare):** two commands, one for the Account ID and one for the token:
+```bash
+npx vercel env add CLOUDFLARE_ACCOUNT_ID production
+npx vercel env add CLOUDFLARE_API_TOKEN production
+```
+
+**Option B (Claude):**
 ```bash
 npx vercel env add ANTHROPIC_API_KEY production
 ```
-Paste your key when asked and press Enter (if it asks whether to mark it as **sensitive**, choose yes).
 
-Finally, publish the real ("production") version, which picks up the key:
+(If you set up both, the server uses Cloudflare. To use Claude instead, also add `SCAN_PROVIDER` with the value `claude`.)
+
+Finally, publish the real ("production") version, which picks up the keys:
 ```bash
 npx vercel --prod
 ```
@@ -160,7 +183,7 @@ npx vercel --prod
 ```
 https://YOUR-PROJECT.vercel.app/api/scan
 ```
-You should see `"ok": true` and `"apiKeyConfigured": true`. 🎉
+You should see `"ok": true`, `"apiKeyConfigured": true`, and under `"service"` the AI it will use. 🎉
 
 > If the page asks you to log in to Vercel, you used one of the long addresses with random letters in it. Those are private preview links. Use the short address from **Domains** instead.
 
@@ -168,7 +191,7 @@ You should see `"ok": true` and `"apiKeyConfigured": true`. 🎉
 
 ## Step 3: Tell the app where your server is
 
-Don't type the address into the code: this project is on GitHub, and anyone who sees the address could run scans on your Claude account. Instead, put it in a private file called `.env.local` that's never uploaded:
+Don't type the address into the code: this project is on GitHub, and anyone who sees the address could run scans on your account. Instead, put it in a private file called `.env.local` that's never uploaded:
 
 1. Go from the `backend` folder (where Step 2 left you) to the `mobile` folder:
    ```bash
@@ -186,7 +209,7 @@ Don't type the address into the code: this project is on GitHub, and anyone who 
 
 `.env.local` is never uploaded to GitHub. The **"scanning is off"** notice disappears and the scan buttons work.
 
-**Protect your credit:** in your Vercel project, open **Firewall** and add a rate-limit rule for the path `/api/scan` (for example, 5 requests per minute per IP address); the free plan includes one rule. When you're not testing, you can delete the API key in the Claude Console and make a new one later.
+**Protect your credit:** in your Vercel project, open **Firewall** and add a rate-limit rule for the path `/api/scan` (for example, 5 requests per minute per IP address); the free plan includes one rule. When you're not testing, you can delete the key (in the Cloudflare dashboard or the Claude Console) and make a new one later.
 
 ---
 
@@ -273,7 +296,7 @@ Reinstalling the app resets that counter, so real limits need to be checked by t
 ## What does it cost?
 
 - **The free test (Way 1 or Way 2):** $0. Expo Go, an Expo account, Node.js and GitHub are free. The Legará preview's scans use your existing Claude plan.
-- **Only if you turn on scanning in the real app:** the Claude API is prepaid credit, roughly **2–5 US cents per scan** (rarely up to about 35 cents). Your spend limit and the credit you bought cap the total. Vercel's free plan is fine for this test, but it's for non-commercial use only, so a paid plan would be needed once the app makes money.
+- **Only if you turn on scanning in the real app:** with **Cloudflare (Option A)** it's free up to the daily allowance; after that, scanning pauses until the next day, so there's no bill. With **Claude (Option B)** it's prepaid credit, roughly **2–5 US cents per scan** (rarely up to about 35 cents); your spend limit and the credit you bought cap the total. Vercel's free plan is fine for this test, but it's for non-commercial use only, so a paid plan would be needed once the app makes money.
 - **Not needed for testing:** the Apple Developer Program ($99/year). It's only needed later, to publish on the App Store or to sell subscriptions.
 
 ---
@@ -287,7 +310,10 @@ Reinstalling the app resets that counter, so real limits need to be checked by t
 | Expo Go says the project is incompatible | Update Expo Go from the App Store. This project uses Expo SDK 57. If Expo Go is up to date and still says this, Expo has moved on to a newer SDK and the project needs upgrading: ask Claude to upgrade it. |
 | Scanning stays off after adding `.env.local` | In the `mobile` folder, list the files with `dir /a` (Windows) or `ls -a` (Mac). The file must be named exactly `.env.local` (not `.env.local.txt`), and its line must start with `EXPO_PUBLIC_BACKEND_URL=`. Then stop the app and start it with `npx expo start --clear`. |
 | "Couldn't reach the Legará server" | Check the address in `mobile/.env.local`. Open `https://YOUR-ADDRESS/api/scan` in Safari on your phone; it should say `"ok": true`. |
-| "The server isn't set up yet (missing Claude API key)" | Run the `npx vercel env add …` command from Step 2, then `npx vercel --prod` again (key changes only apply after redeploying). |
+| "The server isn't set up yet (missing AI service key)" | Run the `npx vercel env add …` commands from Step 2 (Cloudflare needs **both** `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`), then `npx vercel --prod` again (key changes only apply after redeploying). |
+| "The server's Cloudflare key isn't working" | Make a new Workers AI token (Option A, step 2). Then, in the `backend` folder, run `npx vercel env rm CLOUDFLARE_API_TOKEN production`, add the new one with `npx vercel env add CLOUDFLARE_API_TOKEN production`, and run `npx vercel --prod`. Also check the Account ID. |
+| "Today's free scans are used up" | Cloudflare's free daily allowance is used. It refills at midnight UTC (afternoon or evening in the US). |
+| "The AI service couldn't use that request" or "Couldn't read the appraisal" (Cloudflare) | Open your project on vercel.com → **Logs** to see Cloudflare's message. If the AI model was retired or doesn't accept photos, add `CLOUDFLARE_MODEL` with another Workers AI model that accepts images (for example `@cf/mistralai/mistral-small-3.1-24b-instruct`), then `npx vercel --prod`. |
 | "The server's Claude API key isn't working" | Make a new key in the Claude Console. Then, in the `backend` folder, run `npx vercel env rm ANTHROPIC_API_KEY production`, add the new key with `npx vercel env add ANTHROPIC_API_KEY production`, and run `npx vercel --prod`. |
 | "Claude couldn't use that request" | Most often your Claude credit has run out. Check **Billing** in the Claude Console. For details, open your project on vercel.com → **Logs**. |
 | The camera won't open | iPhone **Settings** → **Expo Go** → turn on **Camera**. |
@@ -299,16 +325,16 @@ Reinstalling the app resets that counter, so real limits need to be checked by t
 
 - **This GitHub repository and the test website are public.** On GitHub's free plan the website only works while the repository is public, so don't make it private. To take the website offline instead, use **Unpublish site** (see [The test website](#the-test-website-for-the-project-owner)).
 - **The web address contains "Lego"** (from the repository name). LEGO asks fans not to put its name in web addresses. That's low risk for a free, clearly labelled fan demo, but if you'd like to rename the repository (for example to `legara`), do it before you share the link or QR code widely: GitHub doesn't forward the old website address after a rename.
-- **Never put your Claude API key or your server address in the code.** The key lives only in Vercel, and the address goes in `mobile/.env.local`, which is never uploaded.
+- **Never put your AI keys or your server address in the code.** The keys live only in Vercel, and the address goes in `mobile/.env.local`, which is never uploaded.
 - **Inside the app**, *About Legará and legal notices* (at the bottom of both tabs) says that Legará isn't made or endorsed by the LEGO Group, BrickLink or eBay, that buying happens on their websites, that prices are estimates, what happens to your photos, and who made the fonts and icons. The app icon and brick artwork are original (drawn by `mobile/scripts/make-icons.py`). The Marketplace uses no logos and, unless you add some, no pictures from other websites (see [Adding figure pictures](#adding-figure-pictures-optional)).
 - **The daily scan counter** in the app is only a friendly limit for normal users. It runs on the phone, so it can't stop someone who calls your server directly. That's why the address stays private and the rate limit and spend limit are there.
 
 **Before you promote the website widely, add anything paid, or publish on the App Store,** these must change:
 
 1. **The name and look.** "Legará" is very close to LEGO, and the icon and buttons use LEGO-style studded bricks in LEGO's colors. A public app needs its own name and a design without studs, so nobody thinks the LEGO Group made it.
-2. **A privacy policy** (a web page) and a clear "your photo will be sent to Anthropic's Claude" question before the first scan. Also rules for children under 13 and teens.
+2. **A privacy policy** (a web page) and a clear "your photo will be sent to an AI service (Cloudflare or Anthropic's Claude)" question before the first scan. Also rules for children under 13 and teens.
 3. **Server protection**: sign-in or a per-person scan limit checked by the server, so strangers can't use up your credit.
-4. **Accounts held by an adult**: the Apple Developer Program ($99/year) and the Claude API account.
+4. **Accounts held by an adult**: the Apple Developer Program ($99/year) and the AI account (Cloudflare or Claude).
 5. **For the subscription plan:** Apple's In-App Purchase (required for paid features in iPhone apps) and a paid Vercel plan.
 6. **Full open-source license notices** in the app.
 7. **Figure pictures:** remove them (every `photo` and `photoPage` in `figures.json`) unless the LEGO Group gives written permission. LEGO's tolerance is for free fan projects only. See [Adding figure pictures](#adding-figure-pictures-optional).
@@ -319,7 +345,7 @@ Reinstalling the app resets that counter, so real limits need to be checked by t
 
 ```
 backend/
-  api/scan.ts            The backend: checks the photo, asks Claude, returns the price JSON
+  api/scan.ts            The backend: checks the photo, asks the AI (Cloudflare or Claude), returns the price JSON
   subscription/          Skeleton of a future subscription plan (not switched on; see docs/subscription-plan.md)
 mobile/
   src/config.ts          Where the app finds your server (reads mobile/.env.local, Step 3)
@@ -341,4 +367,4 @@ docs/test-version-qr.png  The QR code at the top of this page
 docs/subscription-plan.md The subscription plan outline (nothing is switched on)
 ```
 
-**Behind the scenes:** the server uses Claude Opus 5.5 with *structured outputs*, which forces Claude's answer into the exact JSON shape the app expects. If one of Claude's safety checks ever wrongly declines a photo, the backend automatically retries on Anthropic's recommended fallback model.
+**Behind the scenes:** with **Cloudflare**, the server asks Meta's Llama 4 Scout model (Built with Llama) for a JSON answer and reads it carefully, forgiving small slips like prices written as text. With **Claude**, it uses Claude Opus 5.5 with *structured outputs*, which forces the answer into the exact JSON shape the app expects, and if one of Claude's safety checks ever wrongly declines a photo, it automatically retries on Anthropic's recommended fallback model.
