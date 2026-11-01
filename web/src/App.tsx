@@ -1,14 +1,18 @@
-import { LayoutGroup, MotionConfig } from 'framer-motion';
+import { AnimatePresence, LayoutGroup, MotionConfig } from 'framer-motion';
 import { useCallback, useEffect, useState } from 'react';
 
 import { AboutSection } from '@/components/about-section';
 import { FigureSheet } from '@/components/figure-sheet';
 import { Hero } from '@/components/hero';
+import { Intro } from '@/components/intro/intro';
 import { Market } from '@/components/market';
 import { ScanSection } from '@/components/scan-section';
+import { ShelfDrawer } from '@/components/shelf-drawer';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
+import { useSmoothScroll } from '@/hooks/use-smooth-scroll';
 import { getFigure } from '@/lib/figures';
+import { rememberViewed } from '@/lib/shelf';
 
 /** The open figure lives in the address (?figure=mr-gold), so a figure can be shared and Back closes it. */
 function figureFromUrl(): string | null {
@@ -16,13 +20,53 @@ function figureFromUrl(): string | null {
   return id && getFigure(id) ? id : null;
 }
 
+const INTRO_SEEN = 'legara.introSeen.v1';
+
+/**
+ * The intro plays once per visit (per browser tab). It's skipped for links straight to a figure or a
+ * section, and `?intro=1` plays it again.
+ */
+function introWanted(): boolean {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('intro')) return params.get('intro') !== '0';
+  if (params.get('figure') || window.location.hash) return false;
+  try {
+    return window.sessionStorage.getItem(INTRO_SEEN) !== '1';
+  } catch {
+    return true;
+  }
+}
+
 export default function App() {
   const [openId, setOpenId] = useState<string | null>(figureFromUrl);
+  const [intro, setIntro] = useState(introWanted);
+  const [shelfOpen, setShelfOpen] = useState(false);
+
+  useSmoothScroll(intro || openId !== null || shelfOpen);
 
   useEffect(() => {
     const onPop = () => setOpenId(figureFromUrl());
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  useEffect(() => {
+    if (openId) rememberViewed(openId);
+  }, [openId]);
+
+  const enter = useCallback(() => {
+    try {
+      window.sessionStorage.setItem(INTRO_SEEN, '1');
+    } catch {
+      // Private mode: the intro may just play again next time.
+    }
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('intro')) {
+      url.searchParams.delete('intro');
+      window.history.replaceState(window.history.state, '', url);
+    }
+    window.scrollTo(0, 0);
+    setIntro(false);
   }, []);
 
   const open = useCallback((id: string) => {
@@ -46,20 +90,33 @@ export default function App() {
     setOpenId(null);
   }, []);
 
+  const openFromShelf = useCallback(
+    (id: string) => {
+      setShelfOpen(false);
+      open(id);
+    },
+    [open],
+  );
+
   const figure = openId ? (getFigure(openId) ?? null) : null;
 
   return (
     <MotionConfig reducedMotion="user">
       <LayoutGroup>
-        <SiteHeader />
-        <main>
-          <Hero onOpen={open} />
-          <Market onOpen={open} />
-          <ScanSection onOpen={open} />
-          <AboutSection />
-        </main>
-        <SiteFooter />
-        <FigureSheet figure={figure} onClose={close} />
+        {/* While the intro is up, the site under it can't be reached by keyboard or screen reader. */}
+        <div inert={intro}>
+          <SiteHeader onOpenShelf={() => setShelfOpen(true)} />
+          <main>
+            <Hero onOpen={open} ready={!intro} />
+            <Market onOpen={open} />
+            <ScanSection onOpen={open} />
+            <AboutSection />
+          </main>
+          <SiteFooter />
+        </div>
+        <FigureSheet figure={figure} onClose={close} onOpen={open} />
+        <ShelfDrawer open={shelfOpen} onOpenChange={setShelfOpen} onOpenFigure={openFromShelf} />
+        <AnimatePresence>{intro ? <Intro key="intro" onEnter={enter} /> : null}</AnimatePresence>
       </LayoutGroup>
     </MotionConfig>
   );

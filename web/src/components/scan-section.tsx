@@ -3,6 +3,7 @@ import { Camera, ImageUp, KeyRound, Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState, type DragEvent, type FormEvent } from 'react';
 
 import { PriceBrick, RarityMark, StudRow } from '@/components/brick';
+import { RevealHeading } from '@/components/reveal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -71,9 +72,9 @@ export function ScanSection({ onOpen }: { onOpen: (id: string) => void }) {
     <section id="scan" aria-labelledby="scan-title" className="border-t border-border bg-surface">
       <div className="mx-auto grid max-w-[1320px] gap-12 px-4 py-16 sm:px-6 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] md:py-24">
         <div>
-          <h2 id="scan-title" className="text-[clamp(38px,5.4vw,68px)] leading-[0.95] font-[860] tracking-[-0.03em] [font-stretch:116%]">
+          <RevealHeading id="scan-title" className="text-[clamp(38px,5.4vw,68px)] leading-[0.95] font-[860] tracking-[-0.03em] [font-stretch:116%]">
             Scan a figure
-          </h2>
+          </RevealHeading>
           <p className="mt-4 max-w-[30rem] text-[17px] leading-[1.5] text-muted-foreground">
             Photograph a minifigure and an AI names it and estimates what it’s worth. Scanning is invite-only: ask the person
             who shared this site for an access code.

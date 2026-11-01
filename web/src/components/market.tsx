@@ -1,12 +1,15 @@
-import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, Search, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { AnimatePresence, motion, useMotionValue, useSpring } from 'framer-motion';
+import { Check, ChevronDown, Heart, Search, Shuffle, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 
 import { PriceBrick, RarityMark } from '@/components/brick';
 import { FigureArt } from '@/components/figure-art';
+import { EASE_OUT, Reveal, RevealHeading } from '@/components/reveal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { FIGURES, PRICES_CHECKED, SORTS, THEMES, formatPrice, matchesSearch, sortFigures, themeColor, type Figure, type SortKey } from '@/lib/figures';
+import { useMediaQuery } from '@/hooks/use-media-query';
+import { FIGURES, PRICES_CHECKED, SORTS, THEMES, formatPrice, getFigure, initials, matchesSearch, sortFigures, themeColor, type Figure, type SortKey } from '@/lib/figures';
+import { clearRecent, useShelf } from '@/lib/shelf';
 import { cn } from '@/lib/utils';
 
 const ALL = 'All themes';
@@ -23,22 +26,50 @@ export function Market({ onOpen }: { onOpen: (id: string) => void }) {
     [query, theme, sort],
   );
   const usedThemes = THEMES.filter((t) => FIGURES.some((f) => f.theme === t));
+  const search = useRef<HTMLInputElement>(null);
+  const shelf = useShelf();
+  const recent = shelf.recent.map(getFigure).filter((f): f is Figure => !!f);
+
+  // Press "/" anywhere to jump to the search box.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== '/' || e.altKey || e.ctrlKey || e.metaKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      e.preventDefault();
+      search.current?.focus();
+      search.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const surprise = () => {
+    const pool = shown.length ? shown : FIGURES;
+    onOpen(pool[Math.floor(Math.random() * pool.length)].id);
+  };
 
   return (
     <section id="market" aria-labelledby="market-title" className="border-t border-border">
       <div className="mx-auto max-w-[1320px] px-4 py-16 sm:px-6 md:py-24">
-        <h2 id="market-title" className="text-[clamp(38px,5.4vw,68px)] leading-[0.95] font-[860] tracking-[-0.03em] [font-stretch:116%]">
+        <RevealHeading id="market-title" className={SECTION_TITLE}>
           The market
-        </h2>
-        <p className="mt-4 max-w-[38rem] text-[17px] leading-[1.5] text-muted-foreground">
-          Pick a figure to see its typical price and where to buy it. Prices are rough estimates for a complete, used figure,
-          checked {PRICES_CHECKED}.
-        </p>
+        </RevealHeading>
+        <Reveal delay={0.15}>
+          <p className="mt-4 max-w-[38rem] text-[17px] leading-[1.5] text-muted-foreground">
+            Pick a figure to see its typical price and where to buy it. Prices are rough estimates for a complete, used figure,
+            checked {PRICES_CHECKED}.
+          </p>
+        </Reveal>
 
-        <div className="mt-9 flex flex-col gap-3 md:flex-row md:items-center">
+        {recent.length ? <RecentlyViewed figures={recent} onOpen={onOpen} /> : null}
+
+        <Reveal delay={0.2} className="mt-9 flex flex-col gap-3 md:flex-row md:items-center">
           <div className="relative md:max-w-md md:flex-1">
             <Search className="pointer-events-none absolute top-1/2 left-3.5 size-[18px] -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input
+              ref={search}
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -55,9 +86,18 @@ export function Market({ onOpen }: { onOpen: (id: string) => void }) {
               >
                 <X className="size-4" />
               </button>
-            ) : null}
+            ) : (
+              <kbd className="pointer-events-none absolute top-1/2 right-3 hidden -translate-y-1/2 rounded border border-border px-1.5 text-[12px] leading-5 font-semibold text-muted-foreground md:block" aria-hidden="true">
+                /
+              </kbd>
+            )}
           </div>
-          <label className="relative inline-flex items-center gap-2 md:ml-auto">
+          <div className="flex items-center gap-2 md:ml-auto">
+          <Button variant="outline" onClick={surprise} className="group">
+            <Shuffle className="transition-transform duration-500 group-hover:rotate-180" />
+            Surprise me
+          </Button>
+          <label className="relative inline-flex items-center gap-2">
             <span className="text-[15px] text-muted-foreground">Sort by</span>
             <select
               value={sort}
@@ -72,7 +112,8 @@ export function Market({ onOpen }: { onOpen: (id: string) => void }) {
             </select>
             <ChevronDown className="pointer-events-none absolute right-3 size-4 text-muted-foreground" aria-hidden="true" />
           </label>
-        </div>
+          </div>
+        </Reveal>
 
         <div role="group" aria-label="Filter by theme" className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
           {[ALL, ...usedThemes].map((t) => {
@@ -84,12 +125,15 @@ export function Market({ onOpen }: { onOpen: (id: string) => void }) {
                 aria-pressed={on}
                 onClick={() => setTheme(t)}
                 className={cn(
-                  'inline-flex h-9 shrink-0 items-center gap-2 rounded-full border px-3.5 text-[14px] font-semibold transition-colors',
-                  on ? 'border-foreground bg-foreground text-background' : 'border-border bg-background hover:border-foreground/40',
+                  'relative inline-flex h-9 shrink-0 items-center gap-2 rounded-full border px-3.5 text-[14px] font-semibold transition-colors duration-300',
+                  on ? 'border-foreground text-background' : 'border-border bg-background hover:border-foreground/40',
                 )}
               >
-                {t !== ALL ? <span className="size-2.5 rounded-full" style={{ background: themeColor(t) }} aria-hidden="true" /> : null}
-                {t === ALL ? 'All' : t}
+                {on ? (
+                  <motion.span layoutId="theme-pill" className="absolute -inset-px rounded-full bg-foreground" transition={{ type: 'spring', stiffness: 420, damping: 34 }} aria-hidden="true" />
+                ) : null}
+                {t !== ALL ? <span className="relative size-2.5 rounded-full" style={{ background: themeColor(t) }} aria-hidden="true" /> : null}
+                <span className="relative">{t === ALL ? 'All' : t}</span>
               </button>
             );
           })}
@@ -116,7 +160,7 @@ export function Market({ onOpen }: { onOpen: (id: string) => void }) {
                     transition={SLIDE}
                     className={wide ? 'col-span-2' : undefined}
                   >
-                    <FigureTile figure={figure} wide={wide} onOpen={onOpen} />
+                    <FigureTile figure={figure} wide={wide} onOpen={onOpen} have={shelf.have.includes(figure.id)} want={shelf.want.includes(figure.id)} />
                   </motion.li>
                 );
               })}
@@ -144,28 +188,124 @@ export function Market({ onOpen }: { onOpen: (id: string) => void }) {
   );
 }
 
-function FigureTile({ figure, wide, onOpen }: { figure: Figure; wide: boolean; onOpen: (id: string) => void }) {
+const SECTION_TITLE = 'text-[clamp(38px,5.4vw,68px)] leading-[0.95] font-[860] tracking-[-0.03em] [font-stretch:116%]';
+
+/** The figures you opened lately, so you can get back to them. */
+function RecentlyViewed({ figures, onOpen }: { figures: Figure[]; onOpen: (id: string) => void }) {
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(figure.id)}
-      className="group flex h-full w-full flex-col rounded-[var(--radius)] border border-border bg-background p-2.5 text-left transition-[border-color,transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-foreground/35 hover:shadow-[0_12px_24px_-16px_rgb(5_19_29/0.5)] sm:p-3"
-      aria-label={`${figure.name}, ${figure.theme}, ${figure.year}${figure.rarity !== 'Common' ? `, ${figure.rarity}` : ''}, about ${formatPrice(figure.priceUsed)} used`}
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: EASE_OUT }} className="mt-8">
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 className="text-[15px] font-semibold">Recently viewed</h3>
+        <button type="button" onClick={clearRecent} className="text-[14px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+          Clear
+        </button>
+      </div>
+      <ul className="-mx-4 mt-2 flex gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+        {figures.map((f) => (
+          <li key={f.id} className="shrink-0">
+            <button
+              type="button"
+              onClick={() => onOpen(f.id)}
+              className="flex items-center gap-2.5 rounded-full border border-border py-1 pr-4 pl-1 text-left transition-[border-color,transform] duration-300 hover:-translate-y-0.5 hover:border-foreground/40"
+            >
+              <span
+                className="inline-flex size-8 items-center justify-center rounded-full text-[12px] font-bold text-white [font-stretch:110%]"
+                style={{ background: themeColor(f.theme), boxShadow: 'inset 0 -2px 0 rgb(0 0 0 / 0.2)' }}
+                aria-hidden="true"
+              >
+                {initials(f.name)}
+              </span>
+              <span className="max-w-[16ch] truncate text-[14px] font-semibold">{f.name}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </motion.div>
+  );
+}
+
+const TILT = { stiffness: 300, damping: 26, mass: 0.6 };
+
+function FigureTile({ figure, wide, onOpen, have, want }: { figure: Figure; wide: boolean; onOpen: (id: string) => void; have: boolean; want: boolean }) {
+  // On a mouse, the tile tilts toward the pointer and a glow in the theme's colour follows it.
+  const fine = useMediaQuery('(hover: hover) and (pointer: fine)');
+  const rx = useMotionValue(0);
+  const ry = useMotionValue(0);
+  const rotateX = useSpring(rx, TILT);
+  const rotateY = useSpring(ry, TILT);
+  const color = themeColor(figure.theme);
+
+  const onMove = (e: PointerEvent<HTMLButtonElement>) => {
+    if (!fine) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width;
+    const py = (e.clientY - r.top) / r.height;
+    rx.set((0.5 - py) * (wide ? 5 : 8));
+    ry.set((px - 0.5) * (wide ? 5 : 8));
+    e.currentTarget.style.setProperty('--mx', `${px * 100}%`);
+    e.currentTarget.style.setProperty('--my', `${py * 100}%`);
+  };
+  const reset = () => {
+    rx.set(0);
+    ry.set(0);
+  };
+
+  return (
+    <motion.div
+      className="h-full"
+      initial={{ opacity: 0, y: 32 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.15 }}
+      transition={{ duration: 0.7, ease: EASE_OUT }}
     >
-      <motion.span layoutId={`art-${figure.id}`} className="block">
-        <FigureArt figure={figure} cols={wide ? 27 : 13} />
-      </motion.span>
-      <span className="mt-3 flex flex-1 flex-col px-0.5">
-        <span className={cn('font-semibold leading-snug', wide ? 'text-[20px] [font-stretch:108%]' : 'line-clamp-2 text-[16px]')}>{figure.name}</span>
-        <span className="mt-0.5 text-[14px] text-muted-foreground">
-          {figure.theme}, {figure.year}
+      <motion.button
+        type="button"
+        onClick={() => {
+          reset();
+          onOpen(figure.id);
+        }}
+        onPointerMove={onMove}
+        onPointerLeave={reset}
+        style={{ rotateX, rotateY, transformPerspective: 900 }}
+        className="group relative flex h-full w-full flex-col overflow-hidden rounded-[var(--radius)] border border-border bg-background p-2.5 text-left transition-[border-color,box-shadow] duration-300 hover:border-foreground/35 hover:shadow-[0_18px_36px_-20px_rgb(5_19_29/0.55)] sm:p-3"
+        aria-label={`${figure.name}, ${figure.theme}, ${figure.year}${figure.rarity !== 'Common' ? `, ${figure.rarity}` : ''}, about ${formatPrice(figure.priceUsed)} used${have ? ', on my shelf' : ''}${want ? ', on my wishlist' : ''}`}
+      >
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          style={{ background: `radial-gradient(circle at var(--mx, 50%) var(--my, 30%), color-mix(in oklab, ${color} 22%, transparent), transparent 55%)` }}
+        />
+        <motion.span layoutId={`art-${figure.id}`} className="relative block">
+          <span className="block transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-[1.03]">
+            <FigureArt figure={figure} cols={wide ? 27 : 13} />
+          </span>
+          {have || want ? (
+            <span className="absolute top-1.5 right-1.5 flex gap-1" aria-hidden="true">
+              {have ? (
+                <span className="inline-flex size-6 items-center justify-center rounded-full bg-foreground text-background">
+                  <Check className="size-3.5" />
+                </span>
+              ) : null}
+              {want ? (
+                <span className="inline-flex size-6 items-center justify-center rounded-full bg-brick-red text-white">
+                  <Heart className="size-3.5 fill-current" />
+                </span>
+              ) : null}
+            </span>
+          ) : null}
+        </motion.span>
+        <span className="relative mt-3 flex flex-1 flex-col px-0.5">
+          <span className={cn('font-semibold leading-snug', wide ? 'text-[20px] [font-stretch:108%]' : 'line-clamp-2 text-[16px]')}>{figure.name}</span>
+          <span className="mt-0.5 text-[14px] text-muted-foreground">
+            {figure.theme}, {figure.year}
+          </span>
+          {wide ? <span className="mt-2 line-clamp-2 max-w-[44ch] text-[14px] leading-[1.45] text-muted-foreground">{figure.note}</span> : null}
+          <span className="mt-auto flex flex-wrap items-end justify-between gap-x-2 gap-y-1.5 pt-3">
+            <PriceBrick size={wide ? 'md' : 'sm'}>{formatPrice(figure.priceUsed)}</PriceBrick>
+            <RarityMark rarity={figure.rarity} quiet />
+          </span>
         </span>
-        {wide ? <span className="mt-2 line-clamp-2 max-w-[44ch] text-[14px] leading-[1.45] text-muted-foreground">{figure.note}</span> : null}
-        <span className="mt-auto flex flex-wrap items-end justify-between gap-x-2 gap-y-1.5 pt-3">
-          <PriceBrick size={wide ? 'md' : 'sm'}>{formatPrice(figure.priceUsed)}</PriceBrick>
-          <RarityMark rarity={figure.rarity} quiet />
-        </span>
-      </span>
-    </button>
+      </motion.button>
+    </motion.div>
   );
 }

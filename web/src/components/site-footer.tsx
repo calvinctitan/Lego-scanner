@@ -10,6 +10,7 @@ const COLUMNS: FooterColumn[] = [
       { label: 'Market', href: '#market' },
       { label: 'Scan a figure', href: '#scan' },
       { label: 'About', href: '#about' },
+      { label: 'Play the intro again', href: `${import.meta.env.BASE_URL}?intro=1` },
     ],
   },
   {

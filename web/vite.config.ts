@@ -19,5 +19,6 @@ export default defineConfig({
     },
   },
   // Source maps are only used to list the open-source licenses; the publish workflow deletes them.
-  build: { sourcemap: 'hidden' },
+  // The 3D intro (three.js) is its own file of about 550 kB, loaded only while the intro shows.
+  build: { sourcemap: 'hidden', chunkSizeWarningLimit: 700 },
 });

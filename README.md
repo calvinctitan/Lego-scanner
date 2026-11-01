@@ -252,7 +252,7 @@ The test website is built from this repository and published free on **GitHub Pa
 
 Scanning on the website stays off until you add the `SCAN_SERVER_URL` repository variable (see [Scanning on the website](#scanning-on-the-website-invite-only-and-free)). Never put an AI key or an access code on GitHub: they belong only in Vercel.
 
-**Editing the website:** the code is in the `web/` folder (React, TypeScript, Tailwind CSS and shadcn/ui components, with Framer Motion for the animations). To try changes on your computer:
+**Editing the website:** the code is in the `web/` folder (React, TypeScript, Tailwind CSS and shadcn/ui components, with Framer Motion for the animations, three.js for the 3D intro in `web/src/components/intro/` and Lenis for smooth scrolling). To try changes on your computer:
 ```bash
 cd web
 npm install
@@ -264,7 +264,7 @@ Then open the address it prints (usually <http://localhost:5173/>). New shadcn c
 
 ## Using the app
 
-- **On the website:** the **Market** is the main section: search, filter by theme, sort, and pick a figure to see its price, notes and **Buy on BrickLink** / **Buy on eBay** buttons (they open in a new tab). Each figure has its own link to share. **Scan** asks for an access code once, then you photograph a figure (on a phone) or drop a photo (on a computer).
+- **On the website:** a 3D intro builds "LEGARÁ" out of bricks; click anywhere (or press Enter) and they fly apart into the site. It plays once per visit; add `?intro=1` to the address (or use **Play the intro again** in the footer) to see it again. The **Market** is the main section: search (press `/` to jump there), filter by theme, sort, **Surprise me**, and pick a figure to see its price, where it ranks, notes and **Buy on BrickLink** / **Buy on eBay** buttons (they open in a new tab). In a figure's panel you can **Share** its link, step to the next or previous figure (or use the ← → keys), see more from the same theme, and mark it **I have it** or **I want it**. **My shelf** (top right) adds up what your collection is worth and what your wishlist would cost; it and **Recently viewed** are saved only in your browser. **Scan** asks for an access code once, then you photograph a figure (on a phone) or drop a photo (on a computer).
 - **Scan tab** (when scanning is on): tap **Scan a minifigure** to take a photo (stand the figure on a plain background and fill most of the frame), or **Choose from photos**. After a few seconds you'll see the figure's name, theme, year, rarity, used and new price ranges, and a tip about what affects its value. **Recent sold prices on eBay** shows what that figure actually sold for, and **Find it for sale** opens an eBay search. Your past scans are saved under **My scans**; tap one to see it again, or swipe it to the left to delete it.
 - **Marketplace tab:** search, filter by theme and sort. **Tap a figure** to choose where to buy it: **Buy on BrickLink** or **Buy on eBay** opens that website's search for the figure in a browser sheet inside the app. You buy there, from that site's sellers; Legará isn't part of the purchase and never handles payments. **More about this figure** shows its price note and a link to recent sold prices.
 - **About Legará and legal notices:** at the bottom of both tabs. It has the trademark notice, privacy summary and credits.
@@ -380,7 +380,8 @@ Reinstalling the app resets that counter, so real limits need to be checked by t
 ## Project map (for when you're curious)
 
 ```
-web/                     The website (the main app): React + TypeScript + Tailwind + shadcn/ui + Framer Motion
+web/                     The website (the main app): React + TypeScript + Tailwind + shadcn/ui + Framer Motion,
+                         three.js for the 3D intro and Lenis for smooth scrolling
   src/App.tsx            The page: header, hero, market, scan, about, footer
   src/components/        Its parts (market.tsx, figure-sheet.tsx, scan-section.tsx, stud-mosaic.tsx…)
   src/components/ui/     shadcn/ui components, including the halftone stud footer

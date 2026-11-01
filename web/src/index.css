@@ -112,3 +112,8 @@
     scroll-behavior: auto;
   }
 }
+
+/* When Lenis does the smooth scrolling, the browser's own smoothing must be off, or the two fight. */
+html.lenis {
+  scroll-behavior: auto;
+}

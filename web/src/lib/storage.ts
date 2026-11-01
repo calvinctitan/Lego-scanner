@@ -5,7 +5,7 @@ const ACCESS_KEY = 'legara.accessCode.v1';
 const COUNTS_KEY = 'legara.dailyScanCounts.v1';
 const DAYS_TO_KEEP = 30;
 
-function read(key: string): string | null {
+export function read(key: string): string | null {
   try {
     return window.localStorage.getItem(key);
   } catch {
@@ -13,7 +13,7 @@ function read(key: string): string | null {
   }
 }
 
-function write(key: string, value: string | null): void {
+export function write(key: string, value: string | null): void {
   try {
     if (value === null) window.localStorage.removeItem(key);
     else window.localStorage.setItem(key, value);
