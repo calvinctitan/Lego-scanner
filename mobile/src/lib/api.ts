@@ -1,4 +1,4 @@
-import { BACKEND_URL } from '../config';
+import { ACCESS_CODE, BACKEND_URL } from '../config';
 import type { Confidence, Rarity, ScanResult } from './types';
 
 const TIMEOUT_MS = 90_000;
@@ -48,7 +48,7 @@ export async function analyzePhoto(base64Jpeg: string, signal: AbortSignal): Pro
     response = await fetch(scanEndpoint(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: base64Jpeg, mediaType: 'image/jpeg' }),
+      body: JSON.stringify({ image: base64Jpeg, mediaType: 'image/jpeg', accessCode: ACCESS_CODE }),
       signal: controller.signal,
     });
   } catch {

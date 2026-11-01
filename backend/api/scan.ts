@@ -8,8 +8,14 @@
 //   - Claude (paid, more accurate):                 ANTHROPIC_API_KEY
 // If both are set, it uses Cloudflare unless SCAN_PROVIDER is set to "claude".
 //
+// Scanning is invite-only: every request needs one of the access codes listed in SCAN_ACCESS_CODES
+// (comma-separated, set in Vercel). With no codes set, nobody can scan.
+//
 //   GET  /api/scan  → health check you can open in a browser
-//   POST /api/scan  → { image: "<base64 JPEG>", mediaType?: "image/jpeg" }
+//   POST /api/scan  → { image: "<base64 JPEG>", mediaType?: "image/jpeg", accessCode: "..." }
+//   POST /api/scan  → { check: true, accessCode: "..." }  checks a code without scanning
+
+import { createHash, timingSafeEqual } from 'node:crypto';
 
 import Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
@@ -117,17 +123,56 @@ function cloudflareModel(): string {
   return process.env.CLOUDFLARE_MODEL?.trim() || CLOUDFLARE_DEFAULT_MODEL;
 }
 
+/** The access codes the owner hands out, from SCAN_ACCESS_CODES ("code1, code2"). */
+function accessCodes(): string[] {
+  return (process.env.SCAN_ACCESS_CODES ?? '')
+    .split(',')
+    .map((code) => code.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+/** Compares in constant time, so the answer's timing gives away nothing about the codes. */
+function sameCode(a: string, b: string): boolean {
+  const hash = (text: string) => createHash('sha256').update(text).digest();
+  return timingSafeEqual(hash(a), hash(b));
+}
+
+function accessCodeIsValid(given: unknown): boolean {
+  if (typeof given !== 'string' || !given.trim()) return false;
+  const code = given.trim().toLowerCase();
+  // Check every code (no early exit), again so timing gives nothing away.
+  return accessCodes().reduce((found, valid) => sameCode(valid, code) || found, false);
+}
+
 export function GET(): Response {
   const provider = chosenProvider();
   return json({
     ok: true,
     message: 'Legará backend is running. The app sends photos here with a POST request.',
+    accessCodesSet: accessCodes().length,
     apiKeyConfigured: provider !== null,
     service: provider === 'cloudflare' ? `Cloudflare Workers AI (${cloudflareModel()})` : provider === 'claude' ? `Claude (${MODEL})` : null,
   });
 }
 
 export async function POST(request: Request): Promise<Response> {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return errorResponse(400, 'The request wasn’t valid JSON.');
+  }
+
+  // Invite-only: check the access code before anything else.
+  const given = typeof body === 'object' && body !== null ? (body as { accessCode?: unknown }).accessCode : undefined;
+  if (accessCodes().length === 0) {
+    console.error('No access codes are set, so nobody can scan. Add SCAN_ACCESS_CODES in Vercel → Settings → Environment Variables, then redeploy.');
+    return errorResponse(403, 'Scanning is invite-only, and no access codes have been set up yet.');
+  }
+  if (!accessCodeIsValid(given)) {
+    return errorResponse(403, 'That access code isn’t valid. Check it with the person who gave it to you.');
+  }
+
   const provider = chosenProvider();
   if (!provider) {
     console.error(
@@ -137,12 +182,8 @@ export async function POST(request: Request): Promise<Response> {
     return errorResponse(500, 'The server isn’t set up yet (missing AI service key).');
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return errorResponse(400, 'The request wasn’t valid JSON.');
-  }
+  // { check: true } only asks whether the code works; nothing is scanned.
+  if ((body as { check?: unknown }).check === true) return json({ ok: true });
 
   const photo = readPhoto(body);
   if ('error' in photo) return errorResponse(photo.status, photo.error);

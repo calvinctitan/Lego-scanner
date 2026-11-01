@@ -1,0 +1,114 @@
+@import "tailwindcss";
+@import "@fontsource-variable/archivo/wdth.css";
+
+/*
+  Legará's colours are LEGO's own plastic colours, used the way the parts are: white and black for
+  structure, the bluish greys for anything quiet, and the bright colours only where they mean something
+  (yellow = a price, red = rare, blue = a link or focus).
+*/
+:root {
+  --background: #ffffff;
+  --foreground: #05131d; /* LEGO Black: a blue-black, not grey */
+  --muted-foreground: #5f625d; /* Dark Bluish Gray, darkened a touch for small text */
+  --surface: #f2f3f4; /* tiles */
+  --surface-strong: #e4e6e8;
+  --stud: #c4c8cb; /* Light Bluish Gray studs on white */
+  --border: #d6d9dc;
+  --input: #c4c8cb;
+  --ring: #0055bf;
+  --brick-yellow: #f2cd37; /* Bright Yellow */
+  --brick-red: #c91a09; /* Bright Red */
+  --brick-blue: #0055bf; /* Bright Blue */
+  --brick-green: #237841; /* Dark Green */
+  --link: #0055bf;
+  --on-yellow: #05131d;
+  --lit-boost: 0%;
+  --radius: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #05131d;
+    --foreground: #eef0f2;
+    --muted-foreground: #a0a5a9;
+    --surface: #0c1f2b;
+    --surface-strong: #13293a;
+    --stud: #1d3a4d;
+    --border: #1d3647;
+    --input: #2a4a5f;
+    --ring: #5b9bff;
+    --brick-red: #e5432d;
+    --link: #7fb0ff;
+    --lit-boost: 22%;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-stud: var(--stud);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-brick-yellow: var(--brick-yellow);
+  --color-brick-red: var(--brick-red);
+  --color-brick-blue: var(--brick-blue);
+  --color-brick-green: var(--brick-green);
+  --color-link: var(--link);
+  --color-on-yellow: var(--on-yellow);
+
+  /* shadcn's names, so components added later with `npx shadcn add` fit in. */
+  --color-primary: var(--foreground);
+  --color-primary-foreground: var(--background);
+  --color-accent: var(--brick-yellow);
+  --color-accent-foreground: var(--on-yellow);
+  --color-destructive: var(--brick-red);
+  --color-muted: var(--surface);
+  --color-card: var(--background);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--background);
+  --color-popover-foreground: var(--foreground);
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: var(--radius);
+  --radius-xl: 16px;
+
+  --font-sans: "Archivo Variable", "Archivo", "Helvetica Neue", Arial, system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-variation-settings: normal;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: var(--brick-yellow);
+    color: var(--on-yellow);
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  /* Sections sit under the sticky header when you jump to them. */
+  section[id] {
+    scroll-margin-top: 72px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

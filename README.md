@@ -4,21 +4,38 @@
 
 > **Unofficial fan project.** Legará is not made, sponsored or endorsed by the LEGO Group. LEGO® is a trademark of the LEGO Group of companies, which does not sponsor, authorize or endorse this project.
 
-## ▶ Try the test version: <https://calvinctitan.github.io/Lego-scanner/>
+## ▶ Open Legará: <https://calvinctitan.github.io/Lego-scanner/>
 
-<a href="https://calvinctitan.github.io/Lego-scanner/"><img src="docs/test-version-qr.png" width="180" alt="QR code that opens the Legará test version"></a>
+<a href="https://calvinctitan.github.io/Lego-scanner/"><img src="docs/test-version-qr.png" width="180" alt="QR code that opens the Legará website"></a>
 
 **On your phone:** point the camera at the QR code, or tap the link. It's free, there's nothing to install and no sign-up, and it works in any phone or computer web browser. On an iPhone, tap **Share** → **Add to Home Screen** to keep it like an app.
 
-**What works:** the **Marketplace**. Browse figures with typical prices, then tap one to buy it on BrickLink or eBay. The buying happens on their websites; Legará doesn't sell anything or take payments. **Scanning is switched off** on this public test website, so it costs nothing and no photos are sent anywhere.
+**The main feature is the Marketplace.** Browse 31 minifigures with typical prices, search and filter them, and tap one to buy it on BrickLink or eBay. The buying happens on their websites; Legará doesn't sell anything or take payments.
+
+**Scanning is invite-only.** Once you switch it on (free, see [Scanning on the website](#scanning-on-the-website-invite-only-and-free)), people who ask you for an access code can photograph a minifigure and get an estimate. Until then the Scan section says it isn't open yet, and nothing can cost money.
 
 ---
 
-Point your iPhone at a LEGO® minifigure and Legará estimates what it's worth. There's also a **Marketplace** tab: tap a figure and it sends you to BrickLink or eBay to buy it.
+This project has three parts:
 
-**This is a test version.** It isn't on the App Store, and out of the box it costs nothing: scanning stays switched off until you deliberately set up your own server (free with Cloudflare's daily allowance, or a few cents per scan with Claude).
+- **The website** (`web/` folder): the main way to use Legará. It's published free on GitHub Pages.
+- **The scanning server** (`backend/` folder): looks at a photo with an AI and estimates the price. Free with Cloudflare's daily allowance; it only scans for people with one of your access codes.
+- **The iPhone app** (`mobile/` folder): the same features as an app you can try in Expo Go. It isn't on the App Store.
+
+Out of the box everything costs nothing: scanning stays switched off until you deliberately set up the server.
 
 This guide assumes you've never built an app before. Follow the steps in order, and copy the commands exactly.
+
+---
+
+## Scanning on the website (invite-only and free)
+
+Scanning needs the server from [Step 2](#step-2-put-the-server-online-optional-for-scanning), set up with the free **Cloudflare** AI (Option A) and your **access codes**. The server only scans for someone who types one of your codes, so a stranger who finds the website can't use it, and Cloudflare's free plan simply stops for the day when its allowance runs out, so there's never a bill.
+
+1. **Set up the server** with Option A (Cloudflare) by following [Before you start](#optional-turn-on-scanning-in-the-real-app) and [Step 2](#step-2-put-the-server-online-optional-for-scanning), including **access codes**.
+2. **Tell the website where the server is:** on GitHub, open the repository → **Settings** → **Secrets and variables** → **Actions** → the **Variables** tab → **New repository variable**. Name: `SCAN_SERVER_URL`. Value: your server's address, like `https://legara-cc4817.vercel.app`. Click **Add variable**. (This one is safe to make public; your access codes and AI keys are never put on GitHub.)
+3. **Republish the website:** **Actions** tab → **Publish test version** → **Run workflow**. A few minutes later the Scan section asks for an access code.
+4. **Give out codes:** when someone asks you, send them one of your codes. To stop a code working, remove it from `SCAN_ACCESS_CODES` in Vercel and redeploy (Step 2).
 
 ---
 
@@ -172,7 +189,13 @@ npx vercel env add ANTHROPIC_API_KEY production
 
 (If you set up both, the server uses Cloudflare. To use Claude instead, also add `SCAN_PROVIDER` with the value `claude`.)
 
-Finally, publish the real ("production") version, which picks up the keys:
+**Access codes (required):** scanning is invite-only, and the server refuses every scan until you add at least one code. Make up a few codes that are hard to guess (for example `brick-7342` or `blue-stud-905`; capital letters don't matter), separated by commas, and add them:
+```bash
+npx vercel env add SCAN_ACCESS_CODES production
+```
+Paste something like `brick-7342, blue-stud-905` and press Enter. You can give a different code to each friend, so you can turn off one person's access without changing the others.
+
+Finally, publish the real ("production") version, which picks up the keys and codes:
 ```bash
 npx vercel --prod
 ```
@@ -183,7 +206,7 @@ npx vercel --prod
 ```
 https://YOUR-PROJECT.vercel.app/api/scan
 ```
-You should see `"ok": true`, `"apiKeyConfigured": true`, and under `"service"` the AI it will use. 🎉
+You should see `"ok": true`, `"apiKeyConfigured": true`, the number of access codes under `"accessCodesSet"`, and under `"service"` the AI it will use. 🎉
 
 > If the page asks you to log in to Vercel, you used one of the long addresses with random letters in it. Those are private preview links. Use the short address from **Domains** instead.
 
@@ -197,9 +220,10 @@ Don't type the address into the code: this project is on GitHub, and anyone who 
    ```bash
    cd ../mobile
    ```
-2. Create the file with this one command, using your own address from Step 2. Type it exactly, with no space before the `>`. It works in both Command Prompt and the Mac Terminal:
+2. Create the file with these two commands, using your own address from Step 2 and one of your access codes. Type them exactly, with no space before the `>` or `>>`. They work in both Command Prompt and the Mac Terminal:
    ```bash
    echo EXPO_PUBLIC_BACKEND_URL=https://YOUR-PROJECT.vercel.app> .env.local
+   echo EXPO_PUBLIC_ACCESS_CODE=brick-7342>> .env.local
    ```
    Keep the `https://` at the start and don't add `/api/scan` at the end. (Don't make this file in Notepad or TextEdit: they tend to save it as `.env.local.txt`, which the app ignores.)
 3. Start the app again. The `--clear` part makes it pick up the new file:
@@ -226,12 +250,21 @@ The test website is built from this repository and published free on **GitHub Pa
 
 **To take the website offline** at any time: **Settings** → **Pages** → the **⋯** menu next to "Your site is live at" → **Unpublish site**. Nothing is lost, and the next publish brings it back.
 
-The website never scans: no server address is given to it, so it can't cost anything. Don't add `EXPO_PUBLIC_BACKEND_URL` to the workflow or to the repository's secrets, or anyone could run paid scans.
+Scanning on the website stays off until you add the `SCAN_SERVER_URL` repository variable (see [Scanning on the website](#scanning-on-the-website-invite-only-and-free)). Never put an AI key or an access code on GitHub: they belong only in Vercel.
+
+**Editing the website:** the code is in the `web/` folder (React, TypeScript, Tailwind CSS and shadcn/ui components, with Framer Motion for the animations). To try changes on your computer:
+```bash
+cd web
+npm install
+npm run dev
+```
+Then open the address it prints (usually <http://localhost:5173/>). New shadcn components can be added with `npx shadcn@latest add button` (for example); they go in `web/src/components/ui/`. The Marketplace list is shared with the iPhone app, so you only edit `mobile/src/data/figures.json`.
 
 ---
 
 ## Using the app
 
+- **On the website:** the **Market** is the main section: search, filter by theme, sort, and pick a figure to see its price, notes and **Buy on BrickLink** / **Buy on eBay** buttons (they open in a new tab). Each figure has its own link to share. **Scan** asks for an access code once, then you photograph a figure (on a phone) or drop a photo (on a computer).
 - **Scan tab** (when scanning is on): tap **Scan a minifigure** to take a photo (stand the figure on a plain background and fill most of the frame), or **Choose from photos**. After a few seconds you'll see the figure's name, theme, year, rarity, used and new price ranges, and a tip about what affects its value. **Recent sold prices on eBay** shows what that figure actually sold for, and **Find it for sale** opens an eBay search. Your past scans are saved under **My scans**; tap one to see it again, or swipe it to the left to delete it.
 - **Marketplace tab:** search, filter by theme and sort. **Tap a figure** to choose where to buy it: **Buy on BrickLink** or **Buy on eBay** opens that website's search for the figure in a browser sheet inside the app. You buy there, from that site's sellers; Legará isn't part of the purchase and never handles payments. **More about this figure** shows its price note and a link to recent sold prices.
 - **About Legará and legal notices:** at the bottom of both tabs. It has the trademark notice, privacy summary and credits.
@@ -287,7 +320,7 @@ Never crop or edit the pictures, never use one as the app icon or in an ad, and 
 
 ## The hidden daily scan counter
 
-The app quietly counts how many scans you do each day, saved only on your phone. Nothing is limited yet. When you're ready to add "3 free scans per day", the counter and a ready-made `FREE_SCANS_PER_DAY = 3` setting are in `mobile/src/lib/scanCounter.ts`, with a comment showing where the check would go.
+The app quietly counts how many scans you do each day, saved only on your phone (the website does the same in each browser, in `web/src/lib/storage.ts`). Nothing is limited yet. When you're ready to add "3 free scans per day", the counter and a ready-made `FREE_SCANS_PER_DAY = 3` setting are in `mobile/src/lib/scanCounter.ts`, with a comment showing where the check would go.
 
 Reinstalling the app resets that counter, so real limits need to be checked by the server, together with a spending limit. [docs/subscription-plan.md](docs/subscription-plan.md) is an outline of how a subscription plan would work (free scans, Legará Plus, the check before each scan), with matching code skeletons in `backend/subscription/`. None of it is switched on, and nothing in it involves money.
 
@@ -309,6 +342,9 @@ Reinstalling the app resets that counter, so real limits need to be checked by t
 | "You need to be signed in to Expo Go and Expo CLI to open your project" (or "…these accounts need to match") | Run `npx expo login` on the computer, sign in to Expo Go on the iPhone (account icon, top-right) with the **same** account, tap **Try Again**, and restart `npx expo start` if needed. |
 | Expo Go says the project is incompatible | Update Expo Go from the App Store. This project uses Expo SDK 57. If Expo Go is up to date and still says this, Expo has moved on to a newer SDK and the project needs upgrading: ask Claude to upgrade it. |
 | Scanning stays off after adding `.env.local` | In the `mobile` folder, list the files with `dir /a` (Windows) or `ls -a` (Mac). The file must be named exactly `.env.local` (not `.env.local.txt`), and its line must start with `EXPO_PUBLIC_BACKEND_URL=`. Then stop the app and start it with `npx expo start --clear`. |
+| "That access code isn't valid" | The code isn't in `SCAN_ACCESS_CODES` in Vercel. Check the spelling (capital letters don't matter). If you changed the codes, run `npx vercel --prod` in the `backend` folder so the server uses the new ones. |
+| "Scanning is invite-only, and no access codes have been set up yet" | Add codes: in the `backend` folder, run `npx vercel env add SCAN_ACCESS_CODES production`, then `npx vercel --prod`. |
+| The website says "Scanning isn't open yet" | Add the `SCAN_SERVER_URL` repository variable on GitHub and run the **Publish test version** workflow again (see [Scanning on the website](#scanning-on-the-website-invite-only-and-free)). |
 | "Couldn't reach the Legará server" | Check the address in `mobile/.env.local`. Open `https://YOUR-ADDRESS/api/scan` in Safari on your phone; it should say `"ok": true`. |
 | "The server isn't set up yet (missing AI service key)" | Run the `npx vercel env add …` commands from Step 2 (Cloudflare needs **both** `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`), then `npx vercel --prod` again (key changes only apply after redeploying). |
 | "The server's Cloudflare key isn't working" | Make a new Workers AI token (Option A, step 2). Then, in the `backend` folder, run `npx vercel env rm CLOUDFLARE_API_TOKEN production`, add the new one with `npx vercel env add CLOUDFLARE_API_TOKEN production`, and run `npx vercel --prod`. Also check the Account ID. |
@@ -344,6 +380,11 @@ Reinstalling the app resets that counter, so real limits need to be checked by t
 ## Project map (for when you're curious)
 
 ```
+web/                     The website (the main app): React + TypeScript + Tailwind + shadcn/ui + Framer Motion
+  src/App.tsx            The page: header, hero, market, scan, about, footer
+  src/components/        Its parts (market.tsx, figure-sheet.tsx, scan-section.tsx, stud-mosaic.tsx…)
+  src/components/ui/     shadcn/ui components, including the halftone stud footer
+  src/lib/               Figures, prices, the scan server, photo shrinking
 backend/
   api/scan.ts            The backend: checks the photo, asks the AI (Cloudflare or Claude), returns the price JSON
   subscription/          Skeleton of a future subscription plan (not switched on; see docs/subscription-plan.md)

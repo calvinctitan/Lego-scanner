@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Legará: what your minifigure is worth</title>
+    <meta name="description" content="An unofficial fan-made price guide for LEGO® minifigures: typical prices, rarity, and where to buy. Not made or endorsed by the LEGO Group." />
+    <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#05131D" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-title" content="Legará" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="icon" type="image/png" href="%BASE_URL%favicon.png" />
+    <link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon.png" />
+    <link rel="manifest" href="%BASE_URL%manifest.json" />
+    <script>
+      // If someone types the address with different capitals (/lego-scanner/) or adds index.html,
+      // put it back the way GitHub Pages expects, so links and the browser history keep working.
+      (function (b) {
+        var p = location.pathname, f = p;
+        if (b && p.toLowerCase().indexOf(b.toLowerCase()) === 0 && p.indexOf(b) !== 0) f = b + p.slice(b.length);
+        f = f.replace(/\/index\.html$/, '/');
+        if (f !== p) history.replaceState(null, '', f + location.search + location.hash);
+      })('%BASE_URL%'.replace(/\/$/, ''));
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>Legará needs JavaScript to show the figures.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

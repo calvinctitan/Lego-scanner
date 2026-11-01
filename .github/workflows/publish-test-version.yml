@@ -1,4 +1,4 @@
-# Publishes the test version of Legará (the web version of the mobile/ app) as a free website on GitHub Pages:
+# Publishes the Legará website (the web/ folder) as a free website on GitHub Pages:
 #   https://calvinctitan.github.io/Lego-scanner/
 #
 # It runs by itself every time something lands on the main branch.
@@ -9,8 +9,9 @@
 #   Settings -> Pages -> Build and deployment -> Source: GitHub Actions
 # Until then this workflow still builds the site, skips publishing, and leaves a yellow note saying what to click.
 #
-# Scanning stays off on this website: no server address is given here (never add EXPO_PUBLIC_BACKEND_URL),
-# so no photo is ever sent anywhere and nothing can cost money.
+# Scanning is off until you set the repository variable SCAN_SERVER_URL (Settings → Secrets and variables →
+# Actions → Variables) to your Legará server's address. That's safe to publish: the server only scans for people
+# with one of your access codes (SCAN_ACCESS_CODES in Vercel). Never put an AI key or access code here.
 name: Publish test version
 
 on:
@@ -57,30 +58,30 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: mobile/package-lock.json
+          cache-dependency-path: web/package-lock.json
 
-      - name: Install the app's packages
-        working-directory: mobile
+      - name: Install the website's packages
+        working-directory: web
         run: npm ci
 
       - name: Build the website
-        working-directory: mobile
+        working-directory: web
         env:
           # The site lives at https://<owner>.github.io/<repository name>/, so every file path starts with /<repository name>.
           BASE_PATH: /${{ github.event.repository.name }}
+          # Empty unless you set the SCAN_SERVER_URL repository variable; then the Scan section opens (invite-only).
+          VITE_SCAN_SERVER_URL: ${{ vars.SCAN_SERVER_URL }}
         run: |
-          # Tell Expo about the /<repository name>/ folder for this build only (app.json in the repo is not changed).
-          node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync('app.json','utf8'));j.expo.experiments={...j.expo.experiments,baseUrl:process.env.BASE_PATH};fs.writeFileSync('app.json',JSON.stringify(j,null,2))"
-          npx expo export --platform web --output-dir dist --source-maps
+          npm run build
           # List the open-source licenses of everything inside the website (and remove the source maps).
           node scripts/third-party-licenses.mjs dist
-          # Home-screen icon and name, the address fix, and 404.html so links like /marketplace/mr-gold open.
-          node scripts/finish-website.mjs dist "$BASE_PATH"
+          # GitHub Pages shows 404.html for addresses it has no file for; the site then shows its own page.
+          cp dist/index.html dist/404.html
 
       - name: Package the website for GitHub Pages
         uses: actions/upload-pages-artifact@v5
         with:
-          path: mobile/dist
+          path: web/dist
 
   deploy:
     needs: build

@@ -9,8 +9,11 @@
 // Instead, create a file named .env.local in the mobile folder with this one line:
 //
 //   EXPO_PUBLIC_BACKEND_URL=https://your-server.vercel.app
+//   EXPO_PUBLIC_ACCESS_CODE=one-of-your-access-codes
 //
+// Scanning is invite-only: the server only scans with one of the codes in its SCAN_ACCESS_CODES.
 // .env.local is never uploaded to GitHub. After creating or changing it, restart with `npx expo start --clear`.
 // (Your AI service key itself lives only on the server, never in the app.)
 // ─────────────────────────────────────────────────────────────────────────────
 export const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://YOUR-BACKEND.vercel.app';
+export const ACCESS_CODE = process.env.EXPO_PUBLIC_ACCESS_CODE || '';
