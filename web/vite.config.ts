@@ -14,12 +14,10 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       // The Marketplace list is shared with the iPhone app, so there's only one file to edit:
-      // mobile/src/data/figures.json
-      '@figures': fileURLToPath(new URL('../mobile/src/data', import.meta.url)),
+      // mobile/src/data/figures.json. scripts/sync-shared.mjs copies it here before each build.
+      '@figures': fileURLToPath(new URL('./src/shared', import.meta.url)),
     },
   },
-  // Lets the dev server read the shared list from the mobile folder.
-  server: { fs: { allow: ['..'] } },
   // Source maps are only used to list the open-source licenses; the publish workflow deletes them.
   build: { sourcemap: 'hidden' },
 });

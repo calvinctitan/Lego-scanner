@@ -4,9 +4,13 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "sync": "node scripts/sync-shared.mjs",
+    "predev": "node scripts/sync-shared.mjs",
     "dev": "vite",
+    "prebuild": "node scripts/sync-shared.mjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
+    "pretypecheck": "node scripts/sync-shared.mjs",
     "typecheck": "tsc -b"
   },
   "dependencies": {

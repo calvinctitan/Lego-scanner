@@ -20,7 +20,7 @@
     "resolveJsonModule": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@figures/*": ["../mobile/src/data/*"]
+      "@figures/*": ["./src/shared/*"]
     }
   },
   "include": ["src"]

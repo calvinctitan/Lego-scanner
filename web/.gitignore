@@ -1,4 +1,5 @@
 node_modules/
+src/shared/
 dist/
 *.tsbuildinfo
 .env*.local
