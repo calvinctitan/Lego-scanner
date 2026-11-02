@@ -25,7 +25,9 @@ export function AboutSection() {
           </Block>
           <Block title="Privacy" delay={0.2}>
             No accounts, ads, cookies or tracking. This browser remembers your access code, how many scans you’ve done, your
-            shelf and the figures you viewed lately, and none of that leaves your device. A scan’s photo goes to the Legará server and the AI service it uses (Cloudflare Workers AI or
+            shelf and the figures you viewed lately, and none of that leaves your device. If you ask for a scan code, your
+            email (and anything you write with it) is emailed to Legará’s owner only, to send you the code; ask them any time
+            to delete it. A scan’s photo goes to the Legará server and the AI service it uses (Cloudflare Workers AI or
             Anthropic’s Claude) to estimate the price, and isn’t kept by Legará. The site is hosted by GitHub Pages, which logs
             visitors’ IP addresses for security.
           </Block>
@@ -33,7 +35,7 @@ export function AboutSection() {
         <p className="mt-12 max-w-[60rem] text-[14px] leading-[1.6] text-muted-foreground">
           Built with React, Tailwind CSS, Radix, Framer Motion, three.js and Lenis. Type: Archivo (SIL Open Font License). Icons: Lucide (ISC
           License). Scanning can use Meta’s Llama 4 model through Cloudflare Workers AI (Built with Llama) or Anthropic’s
-          Claude. The stud artwork is original to Legará. Full license texts:{' '}
+          Claude. The “Every minifigure” list comes from Rebrickable’s database. The stud artwork is original to Legará. Full license texts:{' '}
           <a href={LICENSES} className="text-link underline-offset-4 hover:underline">
             third-party-licenses.txt
           </a>

@@ -77,12 +77,14 @@ type Props = {
   theme: string;
   /** Studs across; 13 fits two letters with a border. Wider tiles use more. */
   cols?: number;
+  /** A colour to use instead of the theme's. */
+  color?: string;
   className?: string;
 };
 
-export const StudMosaic = memo(function StudMosaic({ name, theme, cols = 13, className }: Props) {
+export const StudMosaic = memo(function StudMosaic({ name, theme, cols = 13, color: forced, className }: Props) {
   const lit = litStuds(initials(name), Math.max(13, cols));
-  const color = themeColor(theme);
+  const color = forced ?? themeColor(theme);
   const width = Math.max(13, cols);
   const studs = [];
   for (let y = 0; y < ROWS; y++) {

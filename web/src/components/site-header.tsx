@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react';
 import { useShelf } from '@/lib/shelf';
 
 const LINKS = [
-  { href: '#market', label: 'Market' },
   { href: '#scan', label: 'Scan' },
+  { href: '#market', label: 'Market' },
   { href: '#about', label: 'About' },
 ];
 

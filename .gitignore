@@ -1,0 +1,5 @@
+# Private: the admin page and anything with secrets never goes on GitHub.
+admin/
+.env
+.env.*
+*.pem

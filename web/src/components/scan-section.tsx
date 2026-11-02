@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Camera, ImageUp, KeyRound, Loader2 } from 'lucide-react';
+import { Camera, ImageUp, KeyRound, Loader2, MailCheck, Send } from 'lucide-react';
 import { useEffect, useRef, useState, type DragEvent, type FormEvent } from 'react';
 
 import { PriceBrick, RarityMark, StudRow } from '@/components/brick';
@@ -9,12 +9,22 @@ import { Input } from '@/components/ui/input';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { ebaySearchUrl, findFigureForScan, formatRange } from '@/lib/figures';
 import { preparePhoto, type PreparedPhoto } from '@/lib/photo';
-import { ScanError, checkAccessCode, scanPhoto, scanningIsOpen, type ScanResult } from '@/lib/scan';
-import { recordScan, saveAccessCode, savedAccessCode } from '@/lib/storage';
+import { ScanError, checkAccessCode, requestAccess, scanPhoto, scanningIsOpen, type ScanResult } from '@/lib/scan';
+import {
+  recordScan,
+  requestedEmail,
+  saveAccessCode,
+  saveAccessEmail,
+  saveRequestedEmail,
+  savedAccessCode,
+  savedAccessEmail,
+} from '@/lib/storage';
 import { cn } from '@/lib/utils';
 
 type State =
   | { kind: 'closed' }
+  | { kind: 'request' }
+  | { kind: 'requested'; email: string }
   | { kind: 'code'; error?: string; checking?: boolean }
   | { kind: 'ready'; error?: string }
   | { kind: 'scanning'; photo: PreparedPhoto }
@@ -23,14 +33,16 @@ type State =
 
 function startState(): State {
   if (!scanningIsOpen()) return { kind: 'closed' };
-  return savedAccessCode() ? { kind: 'ready' } : { kind: 'code' };
+  if (savedAccessCode()) return { kind: 'ready' };
+  const asked = requestedEmail();
+  return asked ? { kind: 'requested', email: asked } : { kind: 'request' };
 }
 
-const STEPS = ['Get an access code', 'Photograph your figure', 'Read the estimate'];
+const STEPS = ['Ask for a free code with your email', 'Unlock with the code you’re sent', 'Photograph your figure'];
 
 function stepOf(state: State): number {
-  if (state.kind === 'code' || state.kind === 'closed') return 0;
-  if (state.kind === 'ready' || state.kind === 'scanning' || state.kind === 'failed') return 1;
+  if (state.kind === 'request' || state.kind === 'closed') return 0;
+  if (state.kind === 'requested' || state.kind === 'code') return 1;
   return 2;
 }
 
@@ -46,7 +58,7 @@ export function ScanSection({ onOpen }: { onOpen: (id: string) => void }) {
     scan.current = controller;
     setState({ kind: 'scanning', photo });
     try {
-      const result = await scanPhoto(photo.base64, savedAccessCode(), controller.signal);
+      const result = await scanPhoto(photo.base64, savedAccessCode(), savedAccessEmail(), controller.signal);
       recordScan();
       setState({ kind: 'result', photo, result });
     } catch (error) {
@@ -76,8 +88,8 @@ export function ScanSection({ onOpen }: { onOpen: (id: string) => void }) {
             Scan a figure
           </RevealHeading>
           <p className="mt-4 max-w-[30rem] text-[17px] leading-[1.5] text-muted-foreground">
-            Photograph a minifigure and an AI names it and estimates what it’s worth. Scanning is invite-only: ask the person
-            who shared this site for an access code.
+            Photograph a minifigure and an AI names it and estimates what it’s worth. Scanning is invite-only and free: leave
+            your email to ask for a code, and Legará’s owner emails you one.
           </p>
           <ol className="mt-9 space-y-4">
             {STEPS.map((label, i) => {
@@ -115,6 +127,8 @@ export function ScanSection({ onOpen }: { onOpen: (id: string) => void }) {
               transition={{ duration: 0.22 }}
             >
               {state.kind === 'closed' ? <Closed /> : null}
+              {state.kind === 'request' ? <RequestForm setState={setState} /> : null}
+              {state.kind === 'requested' ? <Requested email={state.email} setState={setState} /> : null}
               {state.kind === 'code' ? <CodeForm state={state} setState={setState} /> : null}
               {state.kind === 'ready' ? (
                 <PhotoPicker error={state.error} onFile={onFile} onForget={() => (saveAccessCode(null), setState({ kind: 'code' }))} />
@@ -162,15 +176,144 @@ function Closed() {
   );
 }
 
+const LABEL = 'text-[15px] font-semibold';
+const ERROR = 'mt-3 text-[15px] font-medium text-brick-red';
+
+/** Step 1: leave your email. The server emails it to the owner, who sends back a code. */
+function RequestForm({ setState }: { setState: (s: State) => void }) {
+  const opened = useRef(Date.now());
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [message, setMessage] = useState('');
+  const [over13, setOver13] = useState(false);
+  const [website, setWebsite] = useState(''); // hidden from people; bots fill it in
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    const clean = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(clean)) return setError('Type your email address, so the code can be sent to you.');
+    if (!over13) return setError('Please confirm you’re 13 or older. Under 13? Ask a parent to request a code with their email.');
+    setError('');
+    setSending(true);
+    try {
+      await requestAccess({ email: clean, name: name.trim(), message: message.trim(), over13, website, elapsedMs: Date.now() - opened.current });
+      saveRequestedEmail(clean);
+      setState({ kind: 'requested', email: clean });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Couldn’t send your request. Please try again.');
+      setSending(false);
+    }
+  };
+
+  return (
+    <form onSubmit={submit} noValidate>
+      <p className="flex items-center gap-2 text-[20px] font-semibold">
+        <Send className="size-5" aria-hidden="true" />
+        Ask for a scan code
+      </p>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div>
+          <label htmlFor="req-email" className={LABEL}>
+            Your email
+          </label>
+          <Input id="req-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1.5" required />
+        </div>
+        <div>
+          <label htmlFor="req-name" className={LABEL}>
+            First name <span className="font-normal text-muted-foreground">(optional)</span>
+          </label>
+          <Input id="req-name" autoComplete="given-name" maxLength={80} value={name} onChange={(e) => setName(e.target.value)} className="mt-1.5" />
+        </div>
+      </div>
+      <label htmlFor="req-message" className={cn(LABEL, 'mt-3 block')}>
+        Anything to add? <span className="font-normal text-muted-foreground">(optional)</span>
+      </label>
+      <textarea
+        id="req-message"
+        rows={2}
+        maxLength={500}
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="For example, which figures you want to check"
+        className="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2.5 text-[16px] outline-none focus-visible:outline-2 focus-visible:outline-ring"
+      />
+      {/* A trap for bots: hidden from people and screen readers. */}
+      <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
+        <label htmlFor="req-website">Website</label>
+        <input id="req-website" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+      </div>
+      <label className="mt-4 flex items-start gap-3 text-[15px] leading-[1.45]">
+        <input type="checkbox" checked={over13} onChange={(e) => setOver13(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[var(--brick-yellow)]" />
+        <span>I’m 13 or older. (Under 13? Ask a parent to request a code with their own email.)</span>
+      </label>
+      {error ? (
+        <p role="alert" className={ERROR}>
+          {error}
+        </p>
+      ) : null}
+      <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
+        <Button type="submit" variant="brick" disabled={sending}>
+          {sending ? <Loader2 className="animate-spin" /> : <Send />}
+          {sending ? 'Sending' : 'Request a code'}
+        </Button>
+        <button type="button" onClick={() => setState({ kind: 'code' })} className="text-[15px] font-medium text-link underline-offset-4 hover:underline">
+          I have a code
+        </button>
+      </div>
+      <p className="mt-4 max-w-[36rem] text-[13px] leading-[1.55] text-muted-foreground">
+        Your email goes only to Legará’s owner, so they can send you a code. It isn’t shown on the site, shared, or used for
+        anything else. Codes are free; they keep the scanner from being overloaded.
+      </p>
+    </form>
+  );
+}
+
+function Requested({ email, setState }: { email: string; setState: (s: State) => void }) {
+  return (
+    <div>
+      <p className="flex items-center gap-2 text-[20px] font-semibold">
+        <MailCheck className="size-5 text-brick-green" aria-hidden="true" />
+        Request sent
+      </p>
+      <p className="mt-2 max-w-[34rem] text-[16px] leading-[1.55] text-muted-foreground">
+        Watch for an email at <span className="font-semibold text-foreground">{email}</span> with your code. A person sends it,
+        so it can take a day or two. Check your spam folder too.
+      </p>
+      <div className="mt-6 flex flex-wrap gap-2.5">
+        <Button variant="brick" onClick={() => setState({ kind: 'code' })}>
+          <KeyRound />
+          I have my code
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => {
+            saveRequestedEmail(null);
+            setState({ kind: 'request' });
+          }}
+        >
+          Use a different email
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/** Step 2: the email and the code sent to it (a code only works with its own email). */
 function CodeForm({ state, setState }: { state: Extract<State, { kind: 'code' }>; setState: (s: State) => void }) {
+  const [email, setEmail] = useState(() => requestedEmail() || savedAccessEmail());
   const [code, setCode] = useState('');
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!code.trim()) return setState({ kind: 'code', error: 'Type the access code you were given.' });
+    if (!email.trim()) return setState({ kind: 'code', error: 'Type the email address your code was sent to.' });
+    if (!code.trim()) return setState({ kind: 'code', error: 'Type the code from the email.' });
     setState({ kind: 'code', checking: true });
     try {
-      await checkAccessCode(code);
+      await checkAccessCode(code, email);
       saveAccessCode(code.trim());
+      saveAccessEmail(email.trim());
+      saveRequestedEmail(null);
       setState({ kind: 'ready' });
     } catch (error) {
       setState({ kind: 'code', error: error instanceof Error ? error.message : 'Couldn’t check that code. Please try again.' });
@@ -178,36 +321,50 @@ function CodeForm({ state, setState }: { state: Extract<State, { kind: 'code' }>
   };
   return (
     <form onSubmit={submit} noValidate>
-      <label htmlFor="access-code" className="flex items-center gap-2 text-[17px] font-semibold">
-        <KeyRound className="size-[18px]" aria-hidden="true" />
-        Access code
-      </label>
-      <div className="mt-3 flex flex-col gap-2.5 sm:flex-row">
-        <Input
-          id="access-code"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          autoComplete="off"
-          autoCapitalize="none"
-          spellCheck={false}
-          aria-invalid={state.error ? true : undefined}
-          aria-describedby={state.error ? 'access-code-error' : 'access-code-help'}
-          className="sm:max-w-xs"
-        />
+      <p className="flex items-center gap-2 text-[20px] font-semibold">
+        <KeyRound className="size-5" aria-hidden="true" />
+        Unlock scanning
+      </p>
+      <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+        <div>
+          <label htmlFor="access-email" className={LABEL}>
+            Email the code was sent to
+          </label>
+          <Input id="access-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1.5" />
+        </div>
+        <div>
+          <label htmlFor="access-code" className={LABEL}>
+            Access code
+          </label>
+          <Input
+            id="access-code"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            autoComplete="off"
+            autoCapitalize="characters"
+            spellCheck={false}
+            placeholder="XXXX-XXXX"
+            aria-invalid={state.error ? true : undefined}
+            aria-describedby={state.error ? 'access-code-error' : undefined}
+            className="mt-1.5 font-mono tracking-wider"
+          />
+        </div>
+      </div>
+      {state.error ? (
+        <p id="access-code-error" role="alert" className={ERROR}>
+          {state.error}
+        </p>
+      ) : null}
+      <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
         <Button type="submit" variant="brick" disabled={state.checking}>
           {state.checking ? <Loader2 className="animate-spin" /> : null}
           {state.checking ? 'Checking' : 'Unlock scanning'}
         </Button>
+        <button type="button" onClick={() => setState({ kind: 'request' })} className="text-[15px] font-medium text-link underline-offset-4 hover:underline">
+          Don’t have a code? Ask for one
+        </button>
       </div>
-      {state.error ? (
-        <p id="access-code-error" role="alert" className="mt-3 text-[15px] font-medium text-brick-red">
-          {state.error}
-        </p>
-      ) : null}
-      <p id="access-code-help" className="mt-4 max-w-[34rem] text-[15px] leading-[1.55] text-muted-foreground">
-        Don’t have one? Ask the person who shared this site with you. Codes are free; they keep the scanner from being
-        overloaded. This browser remembers your code.
-      </p>
+      <p className="mt-4 text-[13px] text-muted-foreground">This browser remembers your code, so you only do this once.</p>
     </form>
   );
 }

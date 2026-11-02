@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useMotionValue, useSpring } from 'framer-motion';
-import { Check, ChevronDown, Heart, Search, Shuffle, X } from 'lucide-react';
+import { Check, ChevronDown, Grid3x3, Heart, LayoutGrid, Search, Shuffle, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 
 import { PriceBrick, RarityMark } from '@/components/brick';
@@ -20,14 +20,30 @@ export function Market({ onOpen }: { onOpen: (id: string) => void }) {
   const [query, setQuery] = useState('');
   const [theme, setTheme] = useState(ALL);
   const [sort, setSort] = useState<SortKey>('value-desc');
+  const [rarity, setRarity] = useState('any');
+  const [price, setPrice] = useState('any');
+  const [owned, setOwned] = useState('all');
+  const [small, setSmall] = useState(false);
+  const shelf = useShelf();
 
-  const shown = useMemo(
-    () => sortFigures(FIGURES.filter((f) => (theme === ALL || f.theme === theme) && matchesSearch(f, query)), sort),
-    [query, theme, sort],
-  );
+  const shown = useMemo(() => {
+    const band = PRICE_BANDS.find((b) => b.key === price) ?? PRICE_BANDS[0];
+    return sortFigures(
+      FIGURES.filter(
+        (f) =>
+          (theme === ALL || f.theme === theme) &&
+          matchesSearch(f, query) &&
+          (rarity === 'any' || f.rarity === rarity) &&
+          f.priceUsed >= band.min &&
+          f.priceUsed < band.max &&
+          (owned === 'all' || shelf[owned as 'have' | 'want'].includes(f.id)),
+      ),
+      sort,
+    );
+  }, [query, theme, sort, rarity, price, owned, shelf]);
+  const extraFilters = rarity !== 'any' || price !== 'any' || owned !== 'all';
   const usedThemes = THEMES.filter((t) => FIGURES.some((f) => f.theme === t));
   const search = useRef<HTMLInputElement>(null);
-  const shelf = useShelf();
   const recent = shelf.recent.map(getFigure).filter((f): f is Figure => !!f);
 
   // Press "/" anywhere to jump to the search box.
@@ -98,8 +114,9 @@ export function Market({ onOpen }: { onOpen: (id: string) => void }) {
             Surprise me
           </Button>
           <label className="relative inline-flex items-center gap-2">
-            <span className="text-[15px] text-muted-foreground">Sort by</span>
+            <span className="hidden text-[15px] text-muted-foreground sm:inline">Sort by</span>
             <select
+              aria-label="Sort by"
               value={sort}
               onChange={(e) => setSort(e.target.value as SortKey)}
               className="h-11 appearance-none rounded-md border border-input bg-background pr-9 pl-3 text-[15px] font-semibold text-foreground"
@@ -139,17 +156,67 @@ export function Market({ onOpen }: { onOpen: (id: string) => void }) {
           })}
         </div>
 
+        <div role="group" aria-label="More filters" className="mt-3 flex flex-wrap items-center gap-2">
+          <FilterSelect label="Rarity" value={rarity} onChange={setRarity} options={RARITY_OPTIONS} />
+          <FilterSelect label="Price" value={price} onChange={setPrice} options={PRICE_BANDS.map((b) => ({ value: b.key, label: b.label }))} />
+          <FilterSelect
+            label="Show"
+            value={owned}
+            onChange={setOwned}
+            options={[
+              { value: 'all', label: 'All figures' },
+              { value: 'have', label: `On my shelf (${shelf.have.length})` },
+              { value: 'want', label: `On my wishlist (${shelf.want.length})` },
+            ]}
+          />
+          {extraFilters ? (
+            <button
+              type="button"
+              onClick={() => (setRarity('any'), setPrice('any'), setOwned('all'))}
+              className="h-9 rounded-md px-2 text-[14px] font-medium text-link underline-offset-4 hover:underline"
+            >
+              Reset filters
+            </button>
+          ) : null}
+          <div role="group" aria-label="Tile size" className="ml-auto inline-flex rounded-md border border-input p-0.5">
+            {[
+              { on: !small, label: 'Large tiles', icon: <LayoutGrid className="size-4" />, set: false },
+              { on: small, label: 'Small tiles', icon: <Grid3x3 className="size-4" />, set: true },
+            ].map((b) => (
+              <button
+                key={b.label}
+                type="button"
+                aria-pressed={b.on}
+                aria-label={b.label}
+                title={b.label}
+                onClick={() => setSmall(b.set)}
+                className={cn('inline-flex size-9 items-center justify-center rounded-[5px] transition-colors', b.on ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground')}
+              >
+                {b.icon}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <p className="mt-6 text-[15px] font-semibold" aria-live="polite">
           {shown.length} {shown.length === 1 ? 'figure' : 'figures'}
           {theme !== ALL ? ` in ${theme}` : ''}
           {query.trim() ? ` matching “${query.trim()}”` : ''}
+          {extraFilters ? ', with filters' : ''}
         </p>
 
         {shown.length ? (
-          <motion.ul layout className="mt-4 grid grid-flow-dense grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <motion.ul
+            layout
+            aria-label="Market figures"
+            className={cn(
+              'mt-4 grid grid-flow-dense gap-3',
+              small ? 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
+            )}
+          >
             <AnimatePresence mode="popLayout" initial={false}>
               {shown.map((figure) => {
-                const wide = figure.rarity === 'Very rare';
+                const wide = !small && figure.rarity === 'Very rare';
                 return (
                   <motion.li
                     key={figure.id}
@@ -160,7 +227,7 @@ export function Market({ onOpen }: { onOpen: (id: string) => void }) {
                     transition={SLIDE}
                     className={wide ? 'col-span-2' : undefined}
                   >
-                    <FigureTile figure={figure} wide={wide} onOpen={onOpen} have={shelf.have.includes(figure.id)} want={shelf.want.includes(figure.id)} />
+                    <FigureTile figure={figure} wide={wide} small={small} onOpen={onOpen} have={shelf.have.includes(figure.id)} want={shelf.want.includes(figure.id)} />
                   </motion.li>
                 );
               })}
@@ -180,11 +247,66 @@ export function Market({ onOpen }: { onOpen: (id: string) => void }) {
                   Show all themes
                 </Button>
               ) : null}
+              {extraFilters ? (
+                <Button variant="outline" onClick={() => (setRarity('any'), setPrice('any'), setOwned('all'))}>
+                  Reset filters
+                </Button>
+              ) : null}
             </div>
           </div>
         )}
       </div>
     </section>
+  );
+}
+
+const RARITY_OPTIONS = [
+  { value: 'any', label: 'Any rarity' },
+  { value: 'Very rare', label: 'Very rare' },
+  { value: 'Rare', label: 'Rare' },
+  { value: 'Uncommon', label: 'Uncommon' },
+  { value: 'Common', label: 'Common' },
+];
+
+const PRICE_BANDS = [
+  { key: 'any', label: 'Any price', min: 0, max: Infinity },
+  { key: 'u10', label: 'Under $10', min: 0, max: 10 },
+  { key: '10-50', label: '$10 to $50', min: 10, max: 50 },
+  { key: '50-250', label: '$50 to $250', min: 50, max: 250 },
+  { key: '250+', label: '$250 and up', min: 250, max: Infinity },
+];
+
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  const active = value !== options[0].value;
+  return (
+    <label className="relative inline-flex items-center">
+      <select
+        aria-label={label}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          'h-9 appearance-none rounded-full border pr-8 pl-3.5 text-[14px] font-semibold transition-colors',
+          active ? 'border-foreground bg-foreground text-background' : 'border-border bg-background text-foreground hover:border-foreground/40',
+        )}
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      <ChevronDown className={cn('pointer-events-none absolute right-2.5 size-4', active ? 'text-background' : 'text-muted-foreground')} aria-hidden="true" />
+    </label>
   );
 }
 
@@ -226,7 +348,21 @@ function RecentlyViewed({ figures, onOpen }: { figures: Figure[]; onOpen: (id: s
 
 const TILT = { stiffness: 300, damping: 26, mass: 0.6 };
 
-function FigureTile({ figure, wide, onOpen, have, want }: { figure: Figure; wide: boolean; onOpen: (id: string) => void; have: boolean; want: boolean }) {
+function FigureTile({
+  figure,
+  wide,
+  small = false,
+  onOpen,
+  have,
+  want,
+}: {
+  figure: Figure;
+  wide: boolean;
+  small?: boolean;
+  onOpen: (id: string) => void;
+  have: boolean;
+  want: boolean;
+}) {
   // On a mouse, the tile tilts toward the pointer and a glow in the theme's colour follows it.
   const fine = useMediaQuery('(hover: hover) and (pointer: fine)');
   const rx = useMotionValue(0);
@@ -295,14 +431,18 @@ function FigureTile({ figure, wide, onOpen, have, want }: { figure: Figure; wide
           ) : null}
         </motion.span>
         <span className="relative mt-3 flex flex-1 flex-col px-0.5">
-          <span className={cn('font-semibold leading-snug', wide ? 'text-[20px] [font-stretch:108%]' : 'line-clamp-2 text-[16px]')}>{figure.name}</span>
-          <span className="mt-0.5 text-[14px] text-muted-foreground">
-            {figure.theme}, {figure.year}
+          <span className={cn('font-semibold leading-snug', wide ? 'text-[20px] [font-stretch:108%]' : small ? 'line-clamp-2 text-[14px]' : 'line-clamp-2 text-[16px]')}>
+            {figure.name}
           </span>
+          {small ? null : (
+            <span className="mt-0.5 text-[14px] text-muted-foreground">
+              {figure.theme}, {figure.year}
+            </span>
+          )}
           {wide ? <span className="mt-2 line-clamp-2 max-w-[44ch] text-[14px] leading-[1.45] text-muted-foreground">{figure.note}</span> : null}
           <span className="mt-auto flex flex-wrap items-end justify-between gap-x-2 gap-y-1.5 pt-3">
             <PriceBrick size={wide ? 'md' : 'sm'}>{formatPrice(figure.priceUsed)}</PriceBrick>
-            <RarityMark rarity={figure.rarity} quiet />
+            {small ? null : <RarityMark rarity={figure.rarity} quiet />}
           </span>
         </span>
       </motion.button>

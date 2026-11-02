@@ -8,11 +8,11 @@ export function scanningIsOpen(): boolean {
   return SERVER !== '';
 }
 
-/** "legara.vercel.app/api/scan/" → "https://legara.vercel.app/api/scan" */
-function endpoint(): string {
+/** "legara.vercel.app/api/scan/" → "https://legara.vercel.app/api/scan" (or another endpoint on that server) */
+export function endpoint(path = 'scan'): string {
   let base = SERVER.replace(/\/+$/, '').replace(/\/api\/scan$/i, '');
   if (!/^https?:\/\//i.test(base)) base = `https://${base}`;
-  return `${base}/api/scan`;
+  return `${base}/api/${path}`;
 }
 
 export type Rarity = 'Common' | 'Uncommon' | 'Rare' | 'Very rare';
@@ -41,10 +41,10 @@ export class ScanError extends Error {
   }
 }
 
-async function post(body: Record<string, unknown>, signal?: AbortSignal): Promise<{ status: number; data: unknown }> {
+async function post(body: Record<string, unknown>, signal?: AbortSignal, path = 'scan'): Promise<{ status: number; data: unknown }> {
   let response: Response;
   try {
-    response = await fetch(endpoint(), {
+    response = await fetch(endpoint(path), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -63,22 +63,22 @@ function errorText(data: unknown, status: number): string {
   return `The server had a problem (error ${status}). Please try again.`;
 }
 
-/** Asks the server whether a code is valid, without scanning anything. */
-export async function checkAccessCode(code: string): Promise<void> {
-  const { status, data } = await post({ check: true, accessCode: code.trim() });
+/** Asks the server whether a code works with this email, without scanning anything. */
+export async function checkAccessCode(code: string, email: string): Promise<void> {
+  const { status, data } = await post({ check: true, accessCode: code.trim(), email: email.trim() });
   if (status === 403) throw new ScanError(errorText(data, status), 'access-code');
   if (status >= 400) throw new ScanError(errorText(data, status));
 }
 
 /** Sends the photo with the access code; the server asks the AI and returns its estimate. */
-export async function scanPhoto(base64Jpeg: string, code: string, signal: AbortSignal): Promise<ScanResult> {
+export async function scanPhoto(base64Jpeg: string, code: string, email: string, signal: AbortSignal): Promise<ScanResult> {
   // One controller for both the Stop button and the time limit.
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), 90_000);
   const stop = () => controller.abort();
   signal.addEventListener('abort', stop);
   try {
-    const { status, data } = await post({ image: base64Jpeg, mediaType: 'image/jpeg', accessCode: code.trim() }, controller.signal);
+    const { status, data } = await post({ image: base64Jpeg, mediaType: 'image/jpeg', accessCode: code.trim(), email: email.trim() }, controller.signal);
     if (status === 403) throw new ScanError(errorText(data, status), 'access-code');
     if (status >= 400) throw new ScanError(errorText(data, status));
     const result = toScanResult(data);
@@ -92,6 +92,14 @@ export async function scanPhoto(base64Jpeg: string, code: string, signal: AbortS
     window.clearTimeout(timer);
     signal.removeEventListener('abort', stop);
   }
+}
+
+export type AccessRequest = { email: string; name: string; message: string; over13: boolean; website: string; elapsedMs: number };
+
+/** Sends "please give me a scan code" to the owner (the server emails it to their Gmail). */
+export async function requestAccess(request: AccessRequest): Promise<void> {
+  const { status, data } = await post(request, undefined, 'request-access');
+  if (status >= 400) throw new ScanError(errorText(data, status));
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

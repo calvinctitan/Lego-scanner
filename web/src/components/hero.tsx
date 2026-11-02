@@ -50,13 +50,13 @@ export function Hero({ onOpen, ready }: { onOpen: (id: string) => void; ready: b
           </motion.p>
           <motion.div {...rise(0.68)} className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg">
-              <a href="#market">Browse the market</a>
-            </Button>
-            <Button asChild size="lg" variant="outline">
               <a href="#scan">
                 <Camera />
                 Scan a figure
               </a>
+            </Button>
+            <Button asChild size="lg" variant="outline">
+              <a href="#market">Browse the market</a>
             </Button>
           </motion.div>
           <motion.p {...rise(0.8)} className="mt-8 max-w-[34rem] text-[13px] leading-[1.55] text-muted-foreground">

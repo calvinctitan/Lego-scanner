@@ -2,6 +2,7 @@ import { AnimatePresence, LayoutGroup, MotionConfig } from 'framer-motion';
 import { useCallback, useEffect, useState } from 'react';
 
 import { AboutSection } from '@/components/about-section';
+import { Catalog } from '@/components/catalog';
 import { FigureSheet } from '@/components/figure-sheet';
 import { Hero } from '@/components/hero';
 import { Intro } from '@/components/intro/intro';
@@ -42,7 +43,22 @@ export default function App() {
   const [intro, setIntro] = useState(introWanted);
   const [shelfOpen, setShelfOpen] = useState(false);
 
-  useSmoothScroll(intro || openId !== null || shelfOpen);
+  const lenis = useSmoothScroll(intro || openId !== null || shelfOpen);
+
+  // A link to a section (like …/#scan in a code email) jumps there once the page has drawn.
+  useEffect(() => {
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    if (!id || intro) return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    const t = window.setTimeout(() => {
+      if (lenis) lenis.scrollTo(el, { offset: -64, immediate: true, force: true });
+      else el.scrollIntoView();
+    }, 60);
+    return () => window.clearTimeout(t);
+    // Only on the first load (and once smooth scrolling is ready).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lenis]);
 
   useEffect(() => {
     const onPop = () => setOpenId(figureFromUrl());
@@ -108,8 +124,9 @@ export default function App() {
           <SiteHeader onOpenShelf={() => setShelfOpen(true)} />
           <main>
             <Hero onOpen={open} ready={!intro} />
-            <Market onOpen={open} />
             <ScanSection onOpen={open} />
+            <Market onOpen={open} />
+            <Catalog />
             <AboutSection />
           </main>
           <SiteFooter />

@@ -3,6 +3,12 @@
   "functions": {
     "api/scan.ts": {
       "maxDuration": 60
+    },
+    "api/request-access.ts": {
+      "maxDuration": 30
+    },
+    "api/catalog.ts": {
+      "maxDuration": 30
     }
   }
 }

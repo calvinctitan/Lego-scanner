@@ -12,6 +12,7 @@
   },
   "include": [
     "api/**/*.ts",
+      "lib/**/*.ts",
     "subscription/**/*.ts"
   ]
 }

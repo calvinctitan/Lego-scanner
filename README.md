@@ -12,7 +12,7 @@
 
 **The main feature is the Marketplace.** Browse 31 minifigures with typical prices, search and filter them, and tap one to buy it on BrickLink or eBay. The buying happens on their websites; Legará doesn't sell anything or take payments.
 
-**Scanning is invite-only.** Once you switch it on (free, see [Scanning on the website](#scanning-on-the-website-invite-only-and-free)), people who ask you for an access code can photograph a minifigure and get an estimate. Until then the Scan section says it isn't open yet, and nothing can cost money.
+**Scanning is invite-only.** Once you switch it on (free, see [Scanning on the website](#scanning-on-the-website-invite-only-and-free)), visitors leave their email to ask for a code, you send one from your private admin page, and they can photograph a minifigure and get an estimate. Until then the Scan section says it isn't open yet, and nothing can cost money.
 
 ---
 
@@ -30,12 +30,48 @@ This guide assumes you've never built an app before. Follow the steps in order, 
 
 ## Scanning on the website (invite-only and free)
 
-Scanning needs the server from [Step 2](#step-2-put-the-server-online-optional-for-scanning), set up with the free **Cloudflare** AI (Option A) and your **access codes**. The server only scans for someone who types one of your codes, so a stranger who finds the website can't use it, and Cloudflare's free plan simply stops for the day when its allowance runs out, so there's never a bill.
+**How it works for a visitor:** the Scan section is right under the headline. They type their email (and tick "I'm 13 or older") and press **Request a code**. Their request lands in your Gmail. You make a code for their email on your **private admin page** and send it from Gmail. They type their email and the code on the site, and they can scan. A code only works together with the email it was made for, so a forwarded code is useless to anyone else.
 
-1. **Set up the server** with Option A (Cloudflare) by following [Before you start](#optional-turn-on-scanning-in-the-real-app) and [Step 2](#step-2-put-the-server-online-optional-for-scanning), including **access codes**.
-2. **Tell the website where the server is:** on GitHub, open the repository → **Settings** → **Secrets and variables** → **Actions** → the **Variables** tab → **New repository variable**. Name: `SCAN_SERVER_URL`. Value: your server's address, like `https://legara-cc4817.vercel.app`. Click **Add variable**. (This one is safe to make public; your access codes and AI keys are never put on GitHub.)
-3. **Republish the website:** **Actions** tab → **Publish test version** → **Run workflow**. A few minutes later the Scan section asks for an access code.
-4. **Give out codes:** when someone asks you, send them one of your codes. To stop a code working, remove it from `SCAN_ACCESS_CODES` in Vercel and redeploy (Step 2).
+Everything here is free. Scanning uses Cloudflare's free AI, which simply stops for the day when the allowance runs out, so there's never a bill.
+
+**What you set up once** (about 30 minutes; do them in this order):
+
+1. **The server.** Follow [Before you start](#optional-turn-on-scanning-in-the-real-app) and [Step 2](#step-2-put-the-server-online-optional-for-scanning) with Option A (Cloudflare). You can skip the shared access codes there.
+2. **A Gmail account for Legará.** Make a new Gmail account just for this (recommended, so your personal email stays private). Then give the server permission to send from it with an **App Password** (never your normal password):
+   1. Sign in to that account, open <https://myaccount.google.com/security> and turn on **2-Step Verification** (Google requires it for App Passwords).
+   2. Open <https://myaccount.google.com/apppasswords>, type the name `Legará server`, and click **Create**. Google shows 16 letters. Copy them (spaces don't matter).
+   3. In the `backend` folder, add both to the server, then the email address requests should go to (it can be the same Gmail):
+      ```bash
+      npx vercel env add GMAIL_USER production
+      npx vercel env add GMAIL_APP_PASSWORD production
+      npx vercel env add OWNER_EMAIL production
+      ```
+      Paste the Gmail address, the 16 letters, and your email address, one each time.
+3. **Your private admin page.** It's the file `admin/legara-admin.html`. It is **not** on GitHub (the `admin/` folder is in `.gitignore`), so keep the copy Claude gave you on your own computer, for example in Documents. Double-click it to open it in your browser: it works offline and sends nothing anywhere.
+   1. Click **Make a new secret**, then **Copy secret**.
+   2. Add it to the server as `SCAN_CODE_SECRET`:
+      ```bash
+      npx vercel env add SCAN_CODE_SECRET production
+      ```
+   Treat the secret like a password: anyone who has it can make codes. Never put it on GitHub.
+4. **The endless catalog (optional).** The "Every minifigure" section lists thousands of minifigures from Rebrickable's free database. First open <https://rebrickable.com/api/> and read the terms, and only continue if they still allow free use on another website with a credit (Legará credits Rebrickable on the page). Then make a free Rebrickable account, open **Settings → API** on Rebrickable, click **Generate new API Key**, and add it:
+   ```bash
+   npx vercel env add REBRICKABLE_API_KEY production
+   ```
+   Without it, that section just doesn't appear.
+5. **Publish the server:** in the `backend` folder, run `npx vercel --prod`. Then open `https://YOUR-PROJECT.vercel.app/api/scan` in a browser: you should see `"emailCodesOn": true`, `"requestEmailsOn": true` and, if you did step 4, `"catalogOn": true`.
+6. **Tell the website where the server is:** on GitHub, open the repository → **Settings** → **Secrets and variables** → **Actions** → the **Variables** tab → **New repository variable**. Name: `SCAN_SERVER_URL`. Value: your server's address, like `https://legara-cc4817.vercel.app`. Click **Add variable**. (This one is safe to be public; the secret, Gmail password and keys stay in Vercel.)
+7. **Republish the website:** **Actions** tab → **Publish test version** → **Run workflow**. A few minutes later the Scan section shows the request form.
+
+**Each time someone asks** (you'll get an email titled "Legará scan request from …"):
+
+1. Open your admin page, paste their email under **Create a code for someone**, and click **Create code**.
+2. Click **Open Gmail draft** (sign in to the Legará Gmail first). The email is written for you, with the code and instructions. Read it and press **Send**.
+3. Don't know them, or don't want to? Just delete the request.
+
+**To stop someone scanning:** on the admin page, click **Stop access** next to their email, copy the list it shows, and in the `backend` folder run `npx vercel env rm SCAN_BLOCKED_EMAILS production` (skip this the first time), then `npx vercel env add SCAN_BLOCKED_EMAILS production`, paste the list, and run `npx vercel --prod`. To cancel **every** code at once, make a new secret on the admin page and replace `SCAN_CODE_SECRET` the same way.
+
+**Kids and privacy:** the form asks visitors to confirm they're 13 or older; younger visitors are asked to have a parent request a code with the parent's email. Only use the emails you receive to send codes. Don't add them to lists or share them, and delete someone's emails when they ask. The site's About section tells visitors this.
 
 ---
 
@@ -189,7 +225,7 @@ npx vercel env add ANTHROPIC_API_KEY production
 
 (If you set up both, the server uses Cloudflare. To use Claude instead, also add `SCAN_PROVIDER` with the value `claude`.)
 
-**Access codes (required):** scanning is invite-only, and the server refuses every scan until you add at least one code. Make up a few codes that are hard to guess (for example `brick-7342` or `blue-stud-905`; capital letters don't matter), separated by commas, and add them:
+**Shared access codes (for the iPhone app):** scanning is invite-only. The website uses codes linked to each person's email (see [Scanning on the website](#scanning-on-the-website-invite-only-and-free)); the iPhone app uses shared codes instead. Make up a few codes that are hard to guess (for example `brick-7342` or `blue-stud-905`; capital letters don't matter), separated by commas, and add them:
 ```bash
 npx vercel env add SCAN_ACCESS_CODES production
 ```
@@ -264,7 +300,7 @@ Then open the address it prints (usually <http://localhost:5173/>). New shadcn c
 
 ## Using the app
 
-- **On the website:** a 3D intro builds "LEGARÁ" out of bricks; click anywhere (or press Enter) and they fly apart into the site. It plays once per visit; add `?intro=1` to the address (or use **Play the intro again** in the footer) to see it again. The **Market** is the main section: search (press `/` to jump there), filter by theme, sort, **Surprise me**, and pick a figure to see its price, where it ranks, notes and **Buy on BrickLink** / **Buy on eBay** buttons (they open in a new tab). In a figure's panel you can **Share** its link, step to the next or previous figure (or use the ← → keys), see more from the same theme, and mark it **I have it** or **I want it**. **My shelf** (top right) adds up what your collection is worth and what your wishlist would cost; it and **Recently viewed** are saved only in your browser. **Scan** asks for an access code once, then you photograph a figure (on a phone) or drop a photo (on a computer).
+- **On the website:** a 3D intro builds "LEGARÁ" out of bricks; click anywhere (or press Enter) and they fly apart into the site. It plays once per visit; add `?intro=1` to the address (or use **Play the intro again** in the footer) to see it again. **Scan** comes first, right under the headline. The **Market** follows: search (press `/` to jump there), filter by theme, rarity, price or your shelf, sort, switch between large and small tiles, **Surprise me**, and pick a figure to see its price, where it ranks, notes and **Buy on BrickLink** / **Buy on eBay** buttons (they open in a new tab). In a figure's panel you can **Share** its link, step to the next or previous figure (or use the ← → keys), see more from the same theme, and mark it **I have it** or **I want it**. **My shelf** (top right) adds up what your collection is worth and what your wishlist would cost; it and **Recently viewed** are saved only in your browser. **Every minifigure** (once switched on) keeps loading thousands more figures from Rebrickable as you scroll, with search, a theme filter and BrickLink / eBay links. **Scan** asks for a code by email once, then you photograph a figure (on a phone) or drop a photo (on a computer).
 - **Scan tab** (when scanning is on): tap **Scan a minifigure** to take a photo (stand the figure on a plain background and fill most of the frame), or **Choose from photos**. After a few seconds you'll see the figure's name, theme, year, rarity, used and new price ranges, and a tip about what affects its value. **Recent sold prices on eBay** shows what that figure actually sold for, and **Find it for sale** opens an eBay search. Your past scans are saved under **My scans**; tap one to see it again, or swipe it to the left to delete it.
 - **Marketplace tab:** search, filter by theme and sort. **Tap a figure** to choose where to buy it: **Buy on BrickLink** or **Buy on eBay** opens that website's search for the figure in a browser sheet inside the app. You buy there, from that site's sellers; Legará isn't part of the purchase and never handles payments. **More about this figure** shows its price note and a link to recent sold prices.
 - **About Legará and legal notices:** at the bottom of both tabs. It has the trademark notice, privacy summary and credits.
@@ -342,8 +378,12 @@ Reinstalling the app resets that counter, so real limits need to be checked by t
 | "You need to be signed in to Expo Go and Expo CLI to open your project" (or "…these accounts need to match") | Run `npx expo login` on the computer, sign in to Expo Go on the iPhone (account icon, top-right) with the **same** account, tap **Try Again**, and restart `npx expo start` if needed. |
 | Expo Go says the project is incompatible | Update Expo Go from the App Store. This project uses Expo SDK 57. If Expo Go is up to date and still says this, Expo has moved on to a newer SDK and the project needs upgrading: ask Claude to upgrade it. |
 | Scanning stays off after adding `.env.local` | In the `mobile` folder, list the files with `dir /a` (Windows) or `ls -a` (Mac). The file must be named exactly `.env.local` (not `.env.local.txt`), and its line must start with `EXPO_PUBLIC_BACKEND_URL=`. Then stop the app and start it with `npx expo start --clear`. |
-| "That access code isn't valid" | The code isn't in `SCAN_ACCESS_CODES` in Vercel. Check the spelling (capital letters don't matter). If you changed the codes, run `npx vercel --prod` in the `backend` folder so the server uses the new ones. |
-| "Scanning is invite-only, and no access codes have been set up yet" | Add codes: in the `backend` folder, run `npx vercel env add SCAN_ACCESS_CODES production`, then `npx vercel --prod`. |
+| "That code doesn't work with that email" (website) | Check on the admin page with **Check a code**. If the admin page says the code is right, the secret in Vercel doesn't match the one on the admin page: add the admin page's secret as `SCAN_CODE_SECRET` again and run `npx vercel --prod`. Also check the email isn't in `SCAN_BLOCKED_EMAILS`. |
+| "Requests aren't open yet" (website) | Add `GMAIL_USER` and `GMAIL_APP_PASSWORD` (see [Scanning on the website](#scanning-on-the-website-invite-only-and-free), step 2) and run `npx vercel --prod`. |
+| "Couldn't send your request right now" | The Gmail App Password is wrong or was removed. Make a new one, replace `GMAIL_APP_PASSWORD` (`npx vercel env rm GMAIL_APP_PASSWORD production`, then add it again) and run `npx vercel --prod`. Vercel → your project → **Logs** shows Gmail's message. |
+| The "Every minifigure" section is missing | `REBRICKABLE_API_KEY` isn't set (step 4), or the website was published before `SCAN_SERVER_URL` was set. |
+| "That access code isn't valid" (iPhone app) | The code isn't in `SCAN_ACCESS_CODES` in Vercel. Check the spelling (capital letters don't matter). If you changed the codes, run `npx vercel --prod` in the `backend` folder so the server uses the new ones. |
+| "Scanning is invite-only, and no access codes have been set up yet" | Add `SCAN_CODE_SECRET` (website) or `SCAN_ACCESS_CODES` (iPhone app): in the `backend` folder, run `npx vercel env add …`, then `npx vercel --prod`. |
 | The website says "Scanning isn't open yet" | Add the `SCAN_SERVER_URL` repository variable on GitHub and run the **Publish test version** workflow again (see [Scanning on the website](#scanning-on-the-website-invite-only-and-free)). |
 | "Couldn't reach the Legará server" | Check the address in `mobile/.env.local`. Open `https://YOUR-ADDRESS/api/scan` in Safari on your phone; it should say `"ok": true`. |
 | "The server isn't set up yet (missing AI service key)" | Run the `npx vercel env add …` commands from Step 2 (Cloudflare needs **both** `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`), then `npx vercel --prod` again (key changes only apply after redeploying). |
@@ -382,12 +422,16 @@ Reinstalling the app resets that counter, so real limits need to be checked by t
 ```
 web/                     The website (the main app): React + TypeScript + Tailwind + shadcn/ui + Framer Motion,
                          three.js for the 3D intro and Lenis for smooth scrolling
-  src/App.tsx            The page: header, hero, market, scan, about, footer
+  src/App.tsx            The page: header, hero, scan, market, every minifigure, about, footer
   src/components/        Its parts (market.tsx, figure-sheet.tsx, scan-section.tsx, stud-mosaic.tsx…)
   src/components/ui/     shadcn/ui components, including the halftone stud footer
-  src/lib/               Figures, prices, the scan server, photo shrinking
+  src/lib/               Figures, prices, the scan server, the catalog, photo shrinking
 backend/
-  api/scan.ts            The backend: checks the photo, asks the AI (Cloudflare or Claude), returns the price JSON
+  api/scan.ts            The backend: checks the code, asks the AI (Cloudflare or Claude), returns the price JSON
+  api/request-access.ts  Emails a visitor's code request to your Gmail
+  api/catalog.ts         Pages of minifigures from Rebrickable for the "Every minifigure" list
+  lib/access.ts          How codes linked to an email are made and checked
+admin/                   NOT on GitHub: your private admin page (legara-admin.html) for making codes
   subscription/          Skeleton of a future subscription plan (not switched on; see docs/subscription-plan.md)
 mobile/
   src/config.ts          Where the app finds your server (reads mobile/.env.local, Step 3)

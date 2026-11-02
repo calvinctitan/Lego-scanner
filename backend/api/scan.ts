@@ -8,18 +8,19 @@
 //   - Claude (paid, more accurate):                 ANTHROPIC_API_KEY
 // If both are set, it uses Cloudflare unless SCAN_PROVIDER is set to "claude".
 //
-// Scanning is invite-only: every request needs one of the access codes listed in SCAN_ACCESS_CODES
-// (comma-separated, set in Vercel). With no codes set, nobody can scan.
+// Scanning is invite-only: every request needs an access code (see lib/access.ts): either a code
+// the owner made for the person's email (SCAN_CODE_SECRET) or a shared one from SCAN_ACCESS_CODES.
+// With neither set, nobody can scan.
 //
 //   GET  /api/scan  → health check you can open in a browser
-//   POST /api/scan  → { image: "<base64 JPEG>", mediaType?: "image/jpeg", accessCode: "..." }
-//   POST /api/scan  → { check: true, accessCode: "..." }  checks a code without scanning
-
-import { createHash, timingSafeEqual } from 'node:crypto';
+//   POST /api/scan  → { image: "<base64 JPEG>", mediaType?: "image/jpeg", accessCode: "...", email?: "..." }
+//   POST /api/scan  → { check: true, accessCode: "...", email?: "..." }  checks a code without scanning
 
 import Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import { z } from 'zod';
+
+import { accessIsValid, anyAccessConfigured, codeSecret, sharedCodes } from '../lib/access.js';
 
 const MODEL = 'claude-opus-5-5';
 // Meta's Llama 4 Scout, a free-to-use model that can look at pictures. Change it in Vercel with
@@ -123,33 +124,15 @@ function cloudflareModel(): string {
   return process.env.CLOUDFLARE_MODEL?.trim() || CLOUDFLARE_DEFAULT_MODEL;
 }
 
-/** The access codes the owner hands out, from SCAN_ACCESS_CODES ("code1, code2"). */
-function accessCodes(): string[] {
-  return (process.env.SCAN_ACCESS_CODES ?? '')
-    .split(',')
-    .map((code) => code.trim().toLowerCase())
-    .filter(Boolean);
-}
-
-/** Compares in constant time, so the answer's timing gives away nothing about the codes. */
-function sameCode(a: string, b: string): boolean {
-  const hash = (text: string) => createHash('sha256').update(text).digest();
-  return timingSafeEqual(hash(a), hash(b));
-}
-
-function accessCodeIsValid(given: unknown): boolean {
-  if (typeof given !== 'string' || !given.trim()) return false;
-  const code = given.trim().toLowerCase();
-  // Check every code (no early exit), again so timing gives nothing away.
-  return accessCodes().reduce((found, valid) => sameCode(valid, code) || found, false);
-}
-
 export function GET(): Response {
   const provider = chosenProvider();
   return json({
     ok: true,
     message: 'Legará backend is running. The app sends photos here with a POST request.',
-    accessCodesSet: accessCodes().length,
+    accessCodesSet: sharedCodes().length,
+    emailCodesOn: codeSecret() !== null,
+    requestEmailsOn: Boolean(process.env.GMAIL_USER?.trim() && process.env.GMAIL_APP_PASSWORD?.trim()),
+    catalogOn: Boolean(process.env.REBRICKABLE_API_KEY?.trim()),
     apiKeyConfigured: provider !== null,
     service: provider === 'cloudflare' ? `Cloudflare Workers AI (${cloudflareModel()})` : provider === 'claude' ? `Claude (${MODEL})` : null,
   });
@@ -164,13 +147,20 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   // Invite-only: check the access code before anything else.
-  const given = typeof body === 'object' && body !== null ? (body as { accessCode?: unknown }).accessCode : undefined;
-  if (accessCodes().length === 0) {
-    console.error('No access codes are set, so nobody can scan. Add SCAN_ACCESS_CODES in Vercel → Settings → Environment Variables, then redeploy.');
+  const given = typeof body === 'object' && body !== null ? (body as { accessCode?: unknown; email?: unknown }) : {};
+  if (!anyAccessConfigured()) {
+    console.error('No access codes are set up, so nobody can scan. Add SCAN_CODE_SECRET (or SCAN_ACCESS_CODES) in Vercel → Settings → Environment Variables, then redeploy.');
     return errorResponse(403, 'Scanning is invite-only, and no access codes have been set up yet.');
   }
-  if (!accessCodeIsValid(given)) {
-    return errorResponse(403, 'That access code isn’t valid. Check it with the person who gave it to you.');
+  if (!accessIsValid(given.accessCode, given.email)) {
+    // The iPhone app sends no email (it uses a shared code), so word the answer to fit.
+    const withEmail = typeof given.email === 'string' && given.email.trim() !== '';
+    return errorResponse(
+      403,
+      withEmail
+        ? 'That code doesn’t work with that email. Check both against the email you were sent.'
+        : 'That access code isn’t valid. Check it with the person who gave it to you.',
+    );
   }
 
   const provider = chosenProvider();

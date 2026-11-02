@@ -2,6 +2,8 @@
 // remembered; the site still works.
 
 const ACCESS_KEY = 'legara.accessCode.v1';
+const EMAIL_KEY = 'legara.accessEmail.v1';
+const REQUESTED_KEY = 'legara.requestedAccess.v1';
 const COUNTS_KEY = 'legara.dailyScanCounts.v1';
 const DAYS_TO_KEEP = 30;
 
@@ -28,6 +30,24 @@ export function savedAccessCode(): string {
 
 export function saveAccessCode(code: string | null): void {
   write(ACCESS_KEY, code);
+}
+
+/** The email the code was made for (codes only work together with their email). */
+export function savedAccessEmail(): string {
+  return read(EMAIL_KEY) ?? '';
+}
+
+export function saveAccessEmail(email: string | null): void {
+  write(EMAIL_KEY, email);
+}
+
+/** The email this browser asked for a code with, so the page can say "request sent". */
+export function requestedEmail(): string {
+  return read(REQUESTED_KEY) ?? '';
+}
+
+export function saveRequestedEmail(email: string | null): void {
+  write(REQUESTED_KEY, email);
 }
 
 // Quietly counts scans per day in this browser. Nothing is limited yet; it's here so a
