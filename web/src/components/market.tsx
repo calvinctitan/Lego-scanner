@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 
 import { PriceBrick, RarityMark } from '@/components/brick';
 import { FigureArt } from '@/components/figure-art';
+import { PriceStack } from '@/components/price-stack';
 import { EASE_OUT, Reveal, RevealHeading } from '@/components/reveal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,15 +70,21 @@ export function Market({ onOpen }: { onOpen: (id: string) => void }) {
   return (
     <section id="market" aria-labelledby="market-title" className="border-t border-border">
       <div className="mx-auto max-w-[1320px] px-4 py-16 sm:px-6 md:py-24">
-        <RevealHeading id="market-title" className={SECTION_TITLE}>
-          The market
-        </RevealHeading>
-        <Reveal delay={0.15}>
-          <p className="mt-4 max-w-[38rem] text-[17px] leading-[1.5] text-muted-foreground">
-            Pick a figure to see its typical price and where to buy it. Prices are rough estimates for a complete, used figure,
-            checked {PRICES_CHECKED}.
-          </p>
-        </Reveal>
+        {/* The heading on the left; on the right, the five most valuable figures as a stack of bricks. */}
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:items-end lg:gap-16">
+          <div>
+            <RevealHeading id="market-title" className={SECTION_TITLE}>
+              The market
+            </RevealHeading>
+            <Reveal delay={0.15}>
+              <p className="mt-4 max-w-[38rem] text-[17px] leading-[1.5] text-muted-foreground">
+                Pick a figure to see its typical price and where to buy it. Prices are rough estimates for a complete, used
+                figure, checked {PRICES_CHECKED}.
+              </p>
+            </Reveal>
+          </div>
+          <PriceStack onOpen={onOpen} className="w-full" />
+        </div>
 
         {recent.length ? <RecentlyViewed figures={recent} onOpen={onOpen} /> : null}
 

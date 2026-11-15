@@ -35,7 +35,7 @@ export function AboutSection() {
         <p className="mt-12 max-w-[60rem] text-[14px] leading-[1.6] text-muted-foreground">
           Built with React, Tailwind CSS, Radix, Framer Motion, three.js and Lenis. Type: Archivo (SIL Open Font License). Icons: Lucide (ISC
           License). Scanning can use Meta’s Llama 4 model through Cloudflare Workers AI (Built with Llama) or Anthropic’s
-          Claude. The “Every minifigure” list comes from Rebrickable’s database. The stud artwork is original to Legará. Full license texts:{' '}
+          Claude. The “Every minifigure” list comes from Rebrickable’s database. The hero’s liquid particle effect is adapted from Sculpture Hero by Guglielmo Giannattasio (guglielmogiannattasio.it). The stud artwork and the brick pile picture are original to Legará. Full license texts:{' '}
           <a href={LICENSES} className="text-link underline-offset-4 hover:underline">
             third-party-licenses.txt
           </a>

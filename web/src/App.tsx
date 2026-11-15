@@ -11,7 +11,7 @@ import { ScanSection } from '@/components/scan-section';
 import { ShelfDrawer } from '@/components/shelf-drawer';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
-import { useSmoothScroll } from '@/hooks/use-smooth-scroll';
+import { scrollToSection, useSmoothScroll } from '@/hooks/use-smooth-scroll';
 import { getFigure } from '@/lib/figures';
 import { rememberViewed } from '@/lib/shelf';
 
@@ -52,7 +52,7 @@ export default function App() {
     const el = document.getElementById(id);
     if (!el) return;
     const t = window.setTimeout(() => {
-      if (lenis) lenis.scrollTo(el, { offset: -64, immediate: true, force: true });
+      if (lenis) scrollToSection(lenis, el, true);
       else el.scrollIntoView();
     }, 60);
     return () => window.clearTimeout(t);
@@ -123,7 +123,7 @@ export default function App() {
         <div inert={intro}>
           <SiteHeader onOpenShelf={() => setShelfOpen(true)} />
           <main>
-            <Hero onOpen={open} ready={!intro} />
+            <Hero ready={!intro} />
             <ScanSection onOpen={open} />
             <Market onOpen={open} />
             <Catalog />

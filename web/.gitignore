@@ -3,3 +3,6 @@ src/shared/
 dist/
 *.tsbuildinfo
 .env*.local
+
+# Scratch files from the hero artwork script (scripts/hero-art/make.mjs)
+scripts/hero-art/.work/

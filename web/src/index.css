@@ -101,8 +101,9 @@
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
-  /* Sections sit under the sticky header when you jump to them. */
-  section[id] {
+  /* Sections stop just below the sticky header (65px tall) when you jump to them. */
+  section[id],
+  #top {
     scroll-margin-top: 72px;
   }
 }
@@ -116,4 +117,191 @@
 /* When Lenis does the smooth scrolling, the browser's own smoothing must be off, or the two fight. */
 html.lenis {
   scroll-behavior: auto;
+}
+
+/* ── The liquid hero, in Legará's look ────────────────────────────────────────
+   The hero component (components/ui/liquid-sculpture-hero.tsx) brings its own neutral styles.
+   These rules, used by components/hero.tsx through the "legara-hero" class, dress it as Legará:
+   Archivo set heavy and wide, "worth?" on a yellow price brick, and buttons that are bricks.
+   They sit outside Tailwind's layers on purpose, so they win over the component's own styles. */
+.legara-hero .sh-content {
+  /* Line the words up with the header and the sections below (1320px wide, 16px or 24px gutters). */
+  padding-inline: max(16px, calc((100cqw - 1320px) / 2 + 24px));
+  gap: clamp(24px, 4cqw, 64px);
+}
+@container (min-width: 640px) {
+  .legara-hero .sh-content {
+    padding-inline: max(24px, calc((100cqw - 1320px) / 2 + 24px));
+  }
+}
+.legara-hero .sh-h1 {
+  font-weight: 880;
+  font-stretch: 116%;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+}
+/* "worth?" sits on a yellow brick with studs, the way every price on the site does. */
+.legara-hero .sh-accent {
+  position: relative;
+  display: inline-block;
+  margin-top: 0.2em;
+  padding: 0.05em 0.17em 0.11em;
+  border-radius: 0.055em;
+  background: var(--brick-yellow);
+  color: var(--on-yellow);
+  font-style: normal;
+  font-weight: 880;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  box-shadow: inset 0 -0.07em 0 rgb(0 0 0 / 0.16);
+}
+.legara-hero .sh-accent::before,
+.legara-hero .sh-btn::before {
+  /* A row of studs: one little rounded-top shape, repeated and spaced evenly. */
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 7%;
+  right: 7%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 7' preserveAspectRatio='none'%3E%3Cpath d='M5 7V3a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v4z' fill='%23f2cd37'/%3E%3Cpath d='M8 0h8a3 3 0 0 1 3 3v1.2a3 3 0 0 0-3-2.6H8a3 3 0 0 0-3 2.6V3a3 3 0 0 1 3-3z' fill='%23fff' fill-opacity='.38'/%3E%3C/svg%3E");
+  background-repeat: space no-repeat;
+  pointer-events: none;
+}
+.legara-hero .sh-accent::before {
+  height: 0.09em;
+  background-size: 0.3em 100%;
+}
+.legara-hero .sh-aside {
+  max-width: 440px;
+}
+.legara-hero .sh-body {
+  font-size: clamp(16px, 1.3cqw, 19px);
+  letter-spacing: 0;
+  opacity: 1;
+  color: var(--muted-foreground);
+}
+.legara-hero .sh-ctas {
+  gap: 12px;
+  align-items: flex-end;
+}
+/* The main button is a yellow brick; the second one is a plain outlined button, as elsewhere on the site. */
+.legara-hero .sh-btn {
+  position: relative;
+  height: 50px;
+  margin-top: 7px;
+  padding: 0 22px 4px;
+  border-radius: 6px;
+  background: var(--brick-yellow);
+  color: var(--on-yellow);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0;
+  box-shadow: inset 0 -5px 0 rgb(0 0 0 / 0.18);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s;
+}
+.legara-hero .sh-btn::before {
+  height: 7px;
+  background-size: 24px 100%;
+}
+.legara-hero .sh-btn:hover {
+  transform: translateY(-2px);
+}
+.legara-hero .sh-btn:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.18);
+}
+.legara-hero .sh-txt {
+  height: 50px;
+  padding: 0 20px;
+  border: 1px solid var(--input);
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+.legara-hero .sh-txt:hover {
+  border-color: color-mix(in srgb, var(--foreground) 40%, transparent);
+  background: var(--surface);
+}
+.legara-hero a:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+/* Behind the pile: a faint field of studs, like a baseplate, fading out towards the edges and
+   before it reaches the words. */
+.legara-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 62%;
+  z-index: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--sh-fg) 9%, transparent) 0 31%, transparent 34%);
+  background-size: 28px 28px;
+  background-position: 50% 0;
+  -webkit-mask-image: radial-gradient(ellipse 66% 100% at 50% 0%, #000 38%, transparent 100%);
+  mask-image: radial-gradient(ellipse 66% 100% at 50% 0%, #000 38%, transparent 100%);
+}
+@container (max-width: 639px) {
+  .legara-hero::before {
+    height: 44%;
+    background-size: 22px 22px;
+    -webkit-mask-image: radial-gradient(ellipse 90% 100% at 50% 0%, #000 45%, transparent 100%);
+    mask-image: radial-gradient(ellipse 90% 100% at 50% 0%, #000 45%, transparent 100%);
+  }
+}
+/* The "Dig through the bricks" cue: a small chip, so it stays readable when it sits over the pile. */
+.legara-hero .sh-hint {
+  gap: 8px;
+  padding: 5px 13px 5px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sh-bg) 88%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--sh-fg) 10%, transparent);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  opacity: 1;
+}
+.legara-hero .sh-hint::before {
+  width: 10px;
+  height: 10px;
+  background: var(--brick-yellow);
+  box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.2);
+}
+.legara-hero[data-touched="1"] .sh-hint {
+  opacity: 0;
+}
+@container (max-width: 639px) {
+  .legara-hero .sh-h1 {
+    line-height: 0.94;
+  }
+  .legara-hero .sh-content {
+    padding-bottom: 28px;
+  }
+}
+/* The words rise into place when the hero goes live (straight away, or as the 3D intro hands over). */
+@keyframes legara-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .legara-hero:not(.is-live) .sh-line,
+  .legara-hero:not(.is-live) .sh-aside > * {
+    opacity: 0;
+  }
+  .legara-hero.is-live .sh-line,
+  .legara-hero.is-live .sh-aside > * {
+    animation: legara-rise 0.95s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+  .legara-hero.is-live .sh-line:nth-child(1) { animation-delay: 0.2s; }
+  .legara-hero.is-live .sh-line:nth-child(2) { animation-delay: 0.32s; }
+  .legara-hero.is-live .sh-aside > :nth-child(1) { animation-delay: 0.46s; }
+  .legara-hero.is-live .sh-aside > :nth-child(2) { animation-delay: 0.56s; }
+  .legara-hero.is-live .sh-aside > :nth-child(3) { animation-delay: 0.66s; }
 }
