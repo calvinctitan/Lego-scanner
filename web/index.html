@@ -23,6 +23,20 @@
         if (f !== p) history.replaceState(null, '', f + location.search + location.hash);
       })('%BASE_URL%'.replace(/\/$/, ''));
     </script>
+    <script>
+      // Light or dark, as picked with the theme switch (see src/lib/theme.ts), set before the page
+      // is drawn so a dark choice never flashes white first.
+      (function () {
+        try {
+          var t = JSON.parse(localStorage.getItem('legara.theme.v1') || '"auto"');
+          if (t === 'light' || t === 'dark') {
+            document.documentElement.setAttribute('data-theme', t);
+            var c = t === 'dark' ? '#05131D' : '#FFFFFF';
+            document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) { m.content = c; });
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

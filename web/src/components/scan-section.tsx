@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Camera, ImageUp, KeyRound, Loader2, MailCheck, Send } from 'lucide-react';
+import { Camera, History, ImageUp, KeyRound, Loader2, MailCheck, Send, X } from 'lucide-react';
 import { useEffect, useRef, useState, type DragEvent, type FormEvent } from 'react';
 
 import { PriceBrick, RarityMark, StudRow } from '@/components/brick';
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { ebaySearchUrl, findFigureForScan, formatRange } from '@/lib/figures';
 import { preparePhoto, type PreparedPhoto } from '@/lib/photo';
+import { clearScans, forgetScan, rememberScan, useScanHistory } from '@/lib/scan-history';
 import { ScanError, checkAccessCode, requestAccess, scanPhoto, scanningIsOpen, type ScanResult } from '@/lib/scan';
 import {
   recordScan,
@@ -60,6 +61,7 @@ export function ScanSection({ onOpen }: { onOpen: (id: string) => void }) {
     try {
       const result = await scanPhoto(photo.base64, savedAccessCode(), savedAccessEmail(), controller.signal);
       recordScan();
+      void rememberScan(photo.previewUrl, result);
       setState({ kind: 'result', photo, result });
     } catch (error) {
       if (controller.signal.aborted) return setState({ kind: 'ready' });
@@ -157,7 +159,73 @@ export function ScanSection({ onOpen }: { onOpen: (id: string) => void }) {
           </AnimatePresence>
         </div>
       </div>
+      <ScanHistory onOpen={onOpen} />
     </section>
+  );
+}
+
+/** Your last scans, kept in this browser, so you can look back at what you scanned and what it was worth. */
+function ScanHistory({ onOpen }: { onOpen: (id: string) => void }) {
+  const history = useScanHistory();
+  if (!history.length) return null;
+  return (
+    <div className="mx-auto max-w-[1320px] px-4 pb-16 sm:px-6 md:pb-24">
+      <div className="flex items-baseline justify-between gap-3 border-t border-border pt-8">
+        <h3 className="inline-flex items-center gap-2 text-[20px] font-[760] [font-stretch:110%]">
+          <History className="size-5" aria-hidden="true" />
+          Your scans
+        </h3>
+        <button type="button" onClick={clearScans} className="text-[14px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+          Clear all
+        </button>
+      </div>
+      <p className="mt-1 text-[14px] text-muted-foreground">Saved in this browser only, with a small copy of each photo.</p>
+      <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <AnimatePresence initial={false}>
+          {history.map((h) => {
+            const match = h.result.isMinifigure ? findFigureForScan(h.result.name, h.result.theme) : undefined;
+            return (
+              <motion.li
+                key={h.id}
+                layout
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                className="flex gap-3 rounded-[var(--radius)] border border-border bg-background p-3"
+              >
+                <img src={h.thumb} alt="" className="size-16 shrink-0 rounded-md bg-surface object-cover" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[15px] font-semibold">{h.result.isMinifigure ? h.result.name : 'Not a minifigure'}</p>
+                  <p className="text-[14px] text-muted-foreground tabular-nums">
+                    {h.result.isMinifigure ? `${formatRange(h.result.valueUsed)} used` : h.result.name}
+                  </p>
+                  <p className="mt-1 flex flex-wrap items-center gap-x-3 text-[13px] text-muted-foreground">
+                    <span>{new Date(h.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                    {match ? (
+                      <button type="button" onClick={() => onOpen(match.id)} className="font-medium text-link underline-offset-4 hover:underline">
+                        In the market
+                      </button>
+                    ) : h.result.isMinifigure ? (
+                      <a href={ebaySearchUrl(h.result.name)} target="_blank" rel="noopener noreferrer" className="font-medium text-link underline-offset-4 hover:underline">
+                        Find on eBay
+                      </a>
+                    ) : null}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => forgetScan(h.id)}
+                  aria-label={`Remove the scan of ${h.result.name}`}
+                  className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-surface hover:text-foreground"
+                >
+                  <X className="size-4" />
+                </button>
+              </motion.li>
+            );
+          })}
+        </AnimatePresence>
+      </ul>
+    </div>
   );
 }
 

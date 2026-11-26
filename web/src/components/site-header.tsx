@@ -1,12 +1,15 @@
 import { motion, useScroll, useSpring } from 'framer-motion';
-import { Library } from 'lucide-react';
+import { Library, Moon, Sun, SunMoon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { useShelf } from '@/lib/shelf';
+import { setTheme, useTheme, type ThemeChoice } from '@/lib/theme';
 
 const LINKS = [
   { href: '#scan', label: 'Scan' },
   { href: '#market', label: 'Market' },
+  // Only on wider screens: phones have room for three links.
+  { href: '#play', label: 'Play', wide: true },
   { href: '#about', label: 'About' },
 ];
 
@@ -49,7 +52,7 @@ export function SiteHeader({ onOpenShelf }: { onOpenShelf: () => void }) {
         Skip to the market
       </a>
       <div className="mx-auto flex h-16 max-w-[1320px] items-center justify-between gap-2 px-4 sm:px-6">
-        <a href="#top" className="text-[24px] leading-none font-[900] tracking-[-0.02em] [font-stretch:125%]" aria-label="Legará, back to the top">
+        <a href="#top" className="text-[22px] leading-none sm:text-[24px] font-[900] tracking-[-0.02em] [font-stretch:125%]" aria-label="Legará, back to the top">
           legará
         </a>
         <div className="flex items-center gap-1">
@@ -58,7 +61,7 @@ export function SiteHeader({ onOpenShelf }: { onOpenShelf: () => void }) {
               {LINKS.map((link) => {
                 const on = active === link.href.slice(1);
                 return (
-                  <li key={link.href} className="relative">
+                  <li key={link.href} className={link.wide ? 'relative hidden md:block' : 'relative'}>
                     {on ? (
                       <motion.span
                         layoutId="nav-pill"
@@ -70,7 +73,7 @@ export function SiteHeader({ onOpenShelf }: { onOpenShelf: () => void }) {
                     <a
                       href={link.href}
                       aria-current={on ? 'location' : undefined}
-                      className={`relative block rounded-md px-2.5 py-2 sm:px-3 transition-colors duration-200 hover:text-foreground ${on ? 'text-foreground' : 'text-muted-foreground'}`}
+                      className={`relative block rounded-md px-2 py-2 sm:px-3 transition-colors duration-200 hover:text-foreground ${on ? 'text-foreground' : 'text-muted-foreground'}`}
                     >
                       {link.label}
                     </a>
@@ -83,7 +86,7 @@ export function SiteHeader({ onOpenShelf }: { onOpenShelf: () => void }) {
             type="button"
             onClick={onOpenShelf}
             aria-label={count ? `My shelf, ${count} ${count === 1 ? 'figure' : 'figures'}` : 'My shelf'}
-            className="relative inline-flex h-10 items-center gap-2 rounded-md px-2.5 text-[15px] font-medium text-muted-foreground transition-colors hover:bg-surface hover:text-foreground"
+            className="relative inline-flex h-10 items-center gap-2 rounded-md px-2 text-[15px] sm:px-2.5 font-medium text-muted-foreground transition-colors hover:bg-surface hover:text-foreground"
           >
             <Library className="size-[18px]" aria-hidden="true" />
             <span className="hidden sm:inline">My shelf</span>
@@ -99,10 +102,33 @@ export function SiteHeader({ onOpenShelf }: { onOpenShelf: () => void }) {
               </motion.span>
             ) : null}
           </button>
+          <ThemeSwitch />
         </div>
       </div>
       {/* How far down the page you are, as a thin yellow brick along the bottom of the header. */}
       <motion.div aria-hidden="true" className="absolute inset-x-0 -bottom-px h-[3px] origin-left bg-brick-yellow" style={{ scaleX: progress }} />
     </header>
+  );
+}
+
+const NEXT: Record<ThemeChoice, ThemeChoice> = { auto: 'light', light: 'dark', dark: 'auto' };
+const LABEL: Record<ThemeChoice, string> = { auto: 'Theme: automatic (follows your device)', light: 'Theme: light', dark: 'Theme: dark' };
+
+/** Light, dark or automatic (the device decides). Each press moves to the next one. */
+function ThemeSwitch() {
+  const { choice } = useTheme();
+  const Icon = choice === 'light' ? Sun : choice === 'dark' ? Moon : SunMoon;
+  return (
+    <button
+      type="button"
+      onClick={() => setTheme(NEXT[choice])}
+      aria-label={`${LABEL[choice]}. Switch to ${NEXT[choice] === 'auto' ? 'automatic' : NEXT[choice]}`}
+      title={LABEL[choice]}
+      className="inline-flex size-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface hover:text-foreground"
+    >
+      <motion.span key={choice} initial={{ rotate: -90, scale: 0.5, opacity: 0 }} animate={{ rotate: 0, scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 500, damping: 22 }}>
+        <Icon className="size-[18px]" aria-hidden="true" />
+      </motion.span>
+    </button>
   );
 }

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 
 import { PriceBrick, RarityMark } from '@/components/brick';
 import { FigureArt } from '@/components/figure-art';
+import { FigureOfTheDay } from '@/components/figure-of-the-day';
 import { PriceStack } from '@/components/price-stack';
 import { EASE_OUT, Reveal, RevealHeading } from '@/components/reveal';
 import { Button } from '@/components/ui/button';
@@ -85,6 +86,8 @@ export function Market({ onOpen }: { onOpen: (id: string) => void }) {
           </div>
           <PriceStack onOpen={onOpen} className="w-full" />
         </div>
+
+        <FigureOfTheDay onOpen={onOpen} />
 
         {recent.length ? <RecentlyViewed figures={recent} onOpen={onOpen} /> : null}
 

@@ -23,11 +23,14 @@
   --link: #0055bf;
   --on-yellow: #05131d;
   --lit-boost: 0%;
+  --gain: #237841; /* money gained: Dark Green */
   --radius: 10px;
 }
 
+/* Dark colours: on dark devices unless the visitor picked light, or whenever they picked dark
+   (the theme switch in the header sets <html data-theme>). */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --background: #05131d;
     --foreground: #eef0f2;
     --muted-foreground: #a0a5a9;
@@ -40,7 +43,34 @@
     --brick-red: #e5432d;
     --link: #7fb0ff;
     --lit-boost: 22%;
+    --gain: #4cc27a;
   }
+}
+:root[data-theme="dark"] {
+  --background: #05131d;
+  --foreground: #eef0f2;
+  --muted-foreground: #a0a5a9;
+  --surface: #0c1f2b;
+  --surface-strong: #13293a;
+  --stud: #1d3a4d;
+  --border: #1d3647;
+  --input: #2a4a5f;
+  --ring: #5b9bff;
+  --brick-red: #e5432d;
+  --link: #7fb0ff;
+  --lit-boost: 22%;
+  --gain: #4cc27a;
+}
+:root {
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 @theme inline {

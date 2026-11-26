@@ -3,8 +3,8 @@ import { useReducedMotion } from 'framer-motion';
 import pile from '@/assets/hero/brick-pile.webp';
 import pileSmall from '@/assets/hero/brick-pile-small.webp';
 import SculptureHero from '@/components/ui/liquid-sculpture-hero';
-import { useMediaQuery } from '@/hooks/use-media-query';
 import { FIGURES, formatPrice, sortFigures } from '@/lib/figures';
+import { useTheme } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
 export const FAN_NOTICE =
@@ -28,7 +28,7 @@ const ARCHIVO = '"Archivo Variable", "Archivo", "Helvetica Neue", Arial, system-
  * out of particles, so the intro's flying bricks hand over to it.
  */
 export function Hero({ ready }: { ready: boolean }) {
-  const dark = useMediaQuery('(prefers-color-scheme: dark)');
+  const { dark } = useTheme();
   const still = useReducedMotion() ?? false;
   return (
     <div id="top">

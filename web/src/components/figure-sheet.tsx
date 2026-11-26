@@ -1,6 +1,6 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { AnimatePresence, animate, motion, useReducedMotion } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight, ExternalLink, Heart, Link2, Share2, TrendingUp, X } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Columns3, ExternalLink, Heart, Link2, Share2, TrendingUp, X } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { PriceBrick, RarityMark } from '@/components/brick';
@@ -19,7 +19,9 @@ import {
   sortFigures,
   type Figure,
 } from '@/lib/figures';
-import { toggleShelf, useShelf } from '@/lib/shelf';
+import { Gain } from '@/components/shelf-drawer';
+import { toggleCompare, useCompare } from '@/lib/compare';
+import { setPaid, toggleShelf, useShelf } from '@/lib/shelf';
 import { cn } from '@/lib/utils';
 
 export const BUYING_NOTE =
@@ -191,6 +193,7 @@ function FigureDetails({ figure, flyIn, rank, onPick }: { figure: Figure; flyIn:
   const shelf = useShelf();
   const have = shelf.have.includes(figure.id);
   const want = shelf.want.includes(figure.id);
+  const comparing = useCompare().includes(figure.id);
   const sameTheme = FIGURES.filter((f) => f.theme === figure.theme && f.id !== figure.id).slice(0, 4);
 
   return (
@@ -223,8 +226,12 @@ function FigureDetails({ figure, flyIn, rank, onPick }: { figure: Figure; flyIn:
         <ToggleChip on={want} onClick={() => toggleShelf('want', figure.id)} icon={<Heart className={cn('size-4', want && 'fill-current')} />}>
           {want ? 'On my wishlist' : 'I want it'}
         </ToggleChip>
+        <ToggleChip on={comparing} onClick={() => toggleCompare(figure.id)} icon={<Columns3 className="size-4" />}>
+          {comparing ? 'Comparing' : 'Compare'}
+        </ToggleChip>
         <ShareButton figure={figure} />
       </motion.div>
+      {have ? <PaidField figure={figure} /> : null}
 
       <motion.div variants={item} className="mt-7">
         <p className="text-[14px] font-semibold text-muted-foreground">Typical used price</p>
@@ -387,5 +394,46 @@ function ShareButton({ figure }: { figure: Figure }) {
       {copied ? <Link2 className="size-4" aria-hidden="true" /> : <Share2 className="size-4" aria-hidden="true" />}
       <span aria-live="polite">{copied ? 'Link copied' : 'Share'}</span>
     </motion.button>
+  );
+}
+
+/** For figures on your shelf: what you paid, and how that compares with what it's worth now. */
+function PaidField({ figure }: { figure: Figure }) {
+  const shelf = useShelf();
+  const saved = shelf.paid[figure.id];
+  const [text, setText] = useState(typeof saved === 'number' ? String(saved) : '');
+  useEffect(() => setText(typeof saved === 'number' ? String(saved) : ''), [figure.id, saved]);
+  const commit = (value: string) => {
+    const clean = value.replace(/[^0-9.]/g, '');
+    const n = Number.parseFloat(clean);
+    setPaid(figure.id, clean === '' || !Number.isFinite(n) ? null : n);
+  };
+  return (
+    <motion.div variants={item} className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md bg-surface px-4 py-3">
+      <label htmlFor="paid" className="text-[14px] font-semibold">
+        What I paid
+      </label>
+      <span className="relative inline-flex items-center">
+        <span className="pointer-events-none absolute left-3 text-[15px] text-muted-foreground">$</span>
+        <input
+          id="paid"
+          inputMode="decimal"
+          autoComplete="off"
+          value={text}
+          placeholder="0"
+          onChange={(e) => setText(e.target.value)}
+          onBlur={(e) => commit(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && commit((e.target as HTMLInputElement).value)}
+          className="h-9 w-28 rounded-md border border-input bg-background pr-2 pl-6 text-[15px] tabular-nums"
+        />
+      </span>
+      {typeof saved === 'number' ? (
+        <span className="text-[14px]" aria-live="polite">
+          Worth {formatPrice(figure.priceUsed)} now <Gain value={figure.priceUsed - saved} />
+        </span>
+      ) : (
+        <span className="text-[13px] text-muted-foreground">Saved in this browser only.</span>
+      )}
+    </motion.div>
   );
 }

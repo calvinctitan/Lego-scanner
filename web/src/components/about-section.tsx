@@ -25,7 +25,8 @@ export function AboutSection() {
           </Block>
           <Block title="Privacy" delay={0.2}>
             No accounts, ads, cookies or tracking. This browser remembers your access code, how many scans you’ve done, your
-            shelf and the figures you viewed lately, and none of that leaves your device. If you ask for a scan code, your
+            shelf (and what you paid), your badges and game scores, your light or dark choice, the figures you viewed lately
+            and your last scans with a small copy of each photo, and none of that leaves your device. If you ask for a scan code, your
             email (and anything you write with it) is emailed to Legará’s owner only, to send you the code; ask them any time
             to delete it. A scan’s photo goes to the Legará server and the AI service it uses (Cloudflare Workers AI or
             Anthropic’s Claude) to estimate the price, and isn’t kept by Legará. The site is hosted by GitHub Pages, which logs

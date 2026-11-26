@@ -2,11 +2,14 @@ import { AnimatePresence, LayoutGroup, MotionConfig } from 'framer-motion';
 import { useCallback, useEffect, useState } from 'react';
 
 import { AboutSection } from '@/components/about-section';
+import { BadgeToast } from '@/components/badge-toast';
 import { Catalog } from '@/components/catalog';
+import { CompareDialog, CompareTray } from '@/components/compare';
 import { FigureSheet } from '@/components/figure-sheet';
 import { Hero } from '@/components/hero';
 import { Intro } from '@/components/intro/intro';
 import { Market } from '@/components/market';
+import { PriceQuiz } from '@/components/price-quiz';
 import { ScanSection } from '@/components/scan-section';
 import { ShelfDrawer } from '@/components/shelf-drawer';
 import { SiteFooter } from '@/components/site-footer';
@@ -42,8 +45,9 @@ export default function App() {
   const [openId, setOpenId] = useState<string | null>(figureFromUrl);
   const [intro, setIntro] = useState(introWanted);
   const [shelfOpen, setShelfOpen] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
 
-  const lenis = useSmoothScroll(intro || openId !== null || shelfOpen);
+  const lenis = useSmoothScroll(intro || openId !== null || shelfOpen || compareOpen);
 
   // A link to a section (like …/#scan in a code email) jumps there once the page has drawn.
   useEffect(() => {
@@ -126,6 +130,7 @@ export default function App() {
             <Hero ready={!intro} />
             <ScanSection onOpen={open} />
             <Market onOpen={open} />
+            <PriceQuiz onOpen={open} />
             <Catalog />
             <AboutSection />
           </main>
@@ -133,6 +138,16 @@ export default function App() {
         </div>
         <FigureSheet figure={figure} onClose={close} onOpen={open} />
         <ShelfDrawer open={shelfOpen} onOpenChange={setShelfOpen} onOpenFigure={openFromShelf} />
+        <CompareTray onCompare={() => setCompareOpen(true)} hidden={intro || openId !== null || shelfOpen || compareOpen} />
+        <CompareDialog
+          open={compareOpen}
+          onOpenChange={setCompareOpen}
+          onOpenFigure={(id) => {
+            setCompareOpen(false);
+            open(id);
+          }}
+        />
+        <BadgeToast paused={intro} />
         <AnimatePresence>{intro ? <Intro key="intro" onEnter={enter} /> : null}</AnimatePresence>
       </LayoutGroup>
     </MotionConfig>
